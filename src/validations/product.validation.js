@@ -11,6 +11,13 @@ const getProducts = {
   }),
 };
 
+const getProduct = {
+  params: Joi.object().keys({
+    classId: Joi.string().required()
+  }),
+};
+
 module.exports = {
-    getProducts
+    getProducts,
+    getProduct
 };

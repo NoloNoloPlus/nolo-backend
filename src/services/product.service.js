@@ -14,6 +14,18 @@ const queryProducts = async (filter, options) => {
     return products;
 };
 
+/**
+ * Query a specific product
+ * @param {Object} filter - Mongo filter
+ * @param {Object} options - Query options
+ * @returns {Promise<QueryResult>}
+ */
+const queryProduct = async (filter, options) => {
+    const products = await Product.findOne(filter, options);
+    return products;
+};
+
 module.exports = {
-    queryProducts
+    queryProducts,
+    queryProduct
 }

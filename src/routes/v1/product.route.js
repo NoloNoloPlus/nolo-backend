@@ -13,5 +13,8 @@ router
   .get(validate(productValidation.getProducts), productController.getProducts);
   //.post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
 
+router
+  .route('/:classId')
+  .get(validate(productValidation.getProduct), productController.getProduct);
 
 module.exports = router;
