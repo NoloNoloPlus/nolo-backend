@@ -1,4 +1,5 @@
-const Joi = require('joi');
+const Joi = require('joi')
+  .extend(require('@joi/date'));
 
 const getProducts = {
   query: Joi.object().keys({
@@ -17,7 +18,26 @@ const getProduct = {
   }),
 };
 
+const getProductInstance = {
+  params: Joi.object().keys({
+    classId: Joi.string().required(),
+    instanceId: Joi.string().required()
+  }),
+};
+
+const getQuote = {
+  params: Joi.object().keys({
+    classId: Joi.string().required(),
+  }),
+    query: Joi.object().keys( {
+    from: Joi.date().format('YYYY/MM/DD').utc().required(),
+    to: Joi.date().format('YYYY/MM/DD').utc().required()
+  })
+}
+
 module.exports = {
     getProducts,
-    getProduct
+    getProduct,
+    getProductInstance,
+    getQuote
 };
