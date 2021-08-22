@@ -9,12 +9,13 @@ const { Product } = require('../models');
  * @param {number} [options.page] - Current page (default = 1)
  * @returns {Promise<QueryResult>}
  */
-const queryProducts = async (filter, projection, options) => { // TODO: Valore di default?
-    if (options) {
-        options.projection = projection
-    }
-    const products = await Product.paginate(filter, options);
-    return products;
+const queryProducts = async (filter, projection, options) => {
+  // TODO: Valore di default?
+  if (options) {
+    options.projection = projection;
+  }
+  const products = await Product.paginate(filter, options);
+  return products;
 };
 
 /**
@@ -23,12 +24,12 @@ const queryProducts = async (filter, projection, options) => { // TODO: Valore d
  * @param {Object} options - Query options
  * @returns {Promise<QueryResult>}
  */
-const queryProduct = async (filter, projection={}, options={}) => {
-    const products = await Product.findOne(filter, projection, options);
-    return products;
+const queryProduct = async (filter, projection = {}, options = {}) => {
+  const products = await Product.findOne(filter, projection, options);
+  return products;
 };
 
 module.exports = {
-    queryProducts,
-    queryProduct
-}
+  queryProducts,
+  queryProduct,
+};

@@ -6,7 +6,6 @@ const productController = require('../../controllers/product.controller');
 
 const router = express.Router();
 
-router
-    .route('/:rentalId/') // TODO: Implementare
+router.route('/:rentalId/'); // TODO: Implementare
 
 module.exports = router;

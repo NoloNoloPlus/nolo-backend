@@ -5,37 +5,36 @@ const { toJSON, paginate } = require('./plugins');
 const { roles } = require('../config/roles');
 
 const productSchema = mongoose.Schema(
-    {
-        name: {
-            type: String,
-            required: true,
-            trim: true,
-        },
-        description: {
-            type: String,
-            required: false,
-            trim: true,
-        },
-        stars : {
-            type: Number
-        },
-        coverImage : {
-            type: String
-        },
-        otherImages : {
-            type: [String]
-        }
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    {
-        timestamps: true,
-        collection : 'products'
-    }
+    description: {
+      type: String,
+      required: false,
+      trim: true,
+    },
+    stars: {
+      type: Number,
+    },
+    coverImage: {
+      type: String,
+    },
+    otherImages: {
+      type: [String],
+    },
+  },
+  {
+    timestamps: true,
+    collection: 'products',
+  }
 );
 
 // add plugin that converts mongoose to json
 productSchema.plugin(toJSON);
 productSchema.plugin(paginate);
-
 
 /**
  * @typedef Product

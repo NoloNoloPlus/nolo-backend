@@ -3,7 +3,7 @@ const authRoute = require('./auth.route');
 const userRoute = require('./user.route');
 const docsRoute = require('./docs.route');
 const productRoute = require('./product.route');
-const rentalRoute = require('./rental.route')
+const rentalRoute = require('./rental.route');
 const config = require('../../config/config');
 
 const router = express.Router();
@@ -19,12 +19,12 @@ const defaultRoutes = [
   },
   {
     path: '/products',
-    route: productRoute
+    route: productRoute,
   },
   {
     path: '/rentals',
-    route: rentalRoute
-  }
+    route: rentalRoute,
+  },
 ];
 
 const devRoutes = [
