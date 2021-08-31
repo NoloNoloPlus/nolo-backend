@@ -14,6 +14,7 @@ const { authLimiter } = require('./middlewares/rateLimiter');
 const routes = require('./routes/v1');
 const { errorConverter, errorHandler } = require('./middlewares/error');
 const ApiError = require('./utils/ApiError');
+const dynamicRoutes = require('./middlewares/dynamicRoutes')
 
 const app = express();
 
@@ -25,7 +26,8 @@ if (config.env !== 'test') {
 }
 
 // set security HTTP headers
-app.use(helmet());
+// TODO: stabilire una content security policy
+app.use(helmet({ contentSecurityPolicy: (process.env.NODE_ENV === 'production') ? undefined : false }));
 
 // parse json request body
 app.use(express.json());
@@ -56,12 +58,14 @@ if (config.env === 'production') {
 // v1 api routes
 app.use('/v1', routes);
 
-const user_path = path.join(__dirname, config.user_path);
+const userPath = path.join(__dirname, config.user_path);
 
-app.use('/', express.static(user_path));
+app.use(dynamicRoutes('/', userPath))
+
+app.use('/', express.static(userPath));
 
 app.get('/', function (req, res) {
-  res.sendFile('index.html', { root: user_path });
+  res.sendFile('index.html', { root: userPath });
 });
 
 // send back a 404 error for any unknown api request

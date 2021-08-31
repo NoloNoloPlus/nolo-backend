@@ -2,7 +2,7 @@ const Joi = require('joi').extend(require('@joi/date'));
 
 const getProducts = {
   query: Joi.object().keys({
-    keywords: Joi.string().default(''),
+    keywords: Joi.string().default('').allow(''),
     stars: Joi.number().default(0),
     sortBy: Joi.string().default('name'),
     ascending: Joi.bool().default(true),

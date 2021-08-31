@@ -12,7 +12,7 @@ const getProducts = catchAsync(async (req, res) => {
     stars: { $gte: req.query.stars },
   };
 
-  if (req.query.keywords) {
+  if (req.query.keywords?.length > 0) {
     filter.$text = {
       $search: req.query.keywords,
     };
