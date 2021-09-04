@@ -3372,6 +3372,11 @@ ini@^1.3.5, ini@~1.3.0:
   resolved "https://registry.yarnpkg.com/ini/-/ini-1.3.8.tgz#a29da425b48806f34767a4efce397269af28432c"
   integrity sha512-JV/yugV2uzW5iMRSiZAyDtQd+nxtUnjeLt0acNdw98kKLrvuRVyB80tsREOE7yvGVgalhZ6RNXCmEHkUKBKxew==
 
+intersecting-ranges@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/intersecting-ranges/-/intersecting-ranges-1.2.0.tgz#d600842401af5a40cd03d24efbe0fc6a6ac5520a"
+  integrity sha512-MlHLVltGuBruf6xrfrqs33VXlUCG4tWMSy9Y+XSt+bRKkL2uJEOQI+8ORvfy722T678ZsdusJwOImZjVhjNOig==
+
 ip@^1.1.5:
   version "1.1.5"
   resolved "https://registry.yarnpkg.com/ip/-/ip-1.1.5.tgz#bdded70114290828c0a039e72ef25f5aaec4354a"

@@ -4,6 +4,24 @@ const bcrypt = require('bcryptjs');
 const { toJSON, paginate } = require('./plugins');
 const { roles } = require('../config/roles');
 
+const availabilityElementSchema = mongoose.Schema({
+  from: {
+    type: Date,
+    required: true
+  },
+  to: {
+    type: Date,
+    required: true
+  },
+  price: {type: mongoose.Types.Decimal128}
+}, {_id: false})
+
+const instanceSchema = mongoose.Schema({
+  availability: {
+    type: [availabilityElementSchema],
+  }
+}, {_id: false, strict: false})
+
 const productSchema = mongoose.Schema(
   {
     name: {
@@ -25,10 +43,14 @@ const productSchema = mongoose.Schema(
     otherImages: {
       type: [String],
     },
+    instances: {
+      type: Map,
+      of: instanceSchema
+    }
   },
   {
     timestamps: true,
-    collection: 'products',
+    collection: 'products'
   }
 );
 

@@ -29,7 +29,12 @@ const queryProduct = async (filter, projection = {}, options = {}) => {
   return products;
 };
 
+const updateProduct = async (filter, update) => {
+  return Product.updateOne(filter, update, {strict: false})
+}
+
 module.exports = {
   queryProducts,
   queryProduct,
+  updateProduct
 };
