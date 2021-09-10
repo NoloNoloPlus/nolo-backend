@@ -29,8 +29,8 @@ const getQuote = {
     classId: Joi.string().required(),
   }),
   query: Joi.object().keys({
-    from: Joi.date().format('YYYY/MM/DD').utc().required(),
-    to: Joi.date().format('YYYY/MM/DD').utc().required(),
+    from: Joi.date().format('YYYY-MM-DD').utc().required(),
+    to: Joi.date().format('YYYY-MM-DD').utc().required(),
   }),
 };
 
