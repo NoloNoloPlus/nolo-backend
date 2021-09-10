@@ -93,12 +93,12 @@ const getAvailability = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
   }
 
-  const { instances } = result._doc;
+  const instances = result.toObject().instances;
 
   let intervals = [];
 
-  for (const [_, instance] of Object.entries(instances)) {
-    intervals = intervals.concat(mergeRanges(instance.availability.map((interval) => [interval.from, interval.to])));
+  for (const [_, instance] of instances.entries()) {
+    intervals = intervals.concat(mergeRanges(instance.toObject().availability.map((interval) => [interval.from, interval.to])));
   }
 
   const availability = mergeRanges(intervals);
@@ -120,19 +120,17 @@ const getQuote = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
   }
 
-  const { instances } = result._doc;
+  const { instances } = result.toObject();
 
   let price = new Decimal(0);
-  const chosenInstances = [];
+  const chosenInstances = {};
 
-  for (const { from } = req.query; from <= req.query.to; from.setDate(from.getDate() + 1)) {
-    const to = new Date(from);
-    to.setDate(to.getDate() + 1);
+  for (const day = new Date(req.query.from); day <= req.query.to; day.setDate(day.getDate() + 1)) {
 
     const matchingIntervals = [];
 
-    for (const [instanceId, instance] of Object.entries(instances)) {
-      const matchingInterval = instance.availability.find((interval) => from >= interval.from && to <= interval.to);
+    for (const [instanceId, instance] of instances.entries()) {
+      const matchingInterval = instance.toObject().availability.find((interval) => day >= interval.from && day <= interval.to);
       if (matchingInterval) {
         matchingIntervals.push({ id: instanceId, price: new Decimal(matchingInterval.price.toString()) });
       }
@@ -143,15 +141,20 @@ const getQuote = catchAsync(async (req, res) => {
     }
 
     matchingIntervals.sort((interval1, interval2) => interval1.price.minus(interval2.price).toNumber());
-    chosenInstances.push(matchingIntervals[0].id);
+
+    const chosenId = matchingIntervals[0].id;
+
+    if (!(chosenId in chosenInstances)) {
+      chosenInstances[chosenId] = { dateRanges: [] }
+    }
+
+    chosenInstances[chosenId].dateRanges.push({from: new Date(day), to: new Date(day)});
     price = price.plus(matchingIntervals[0].price);
   }
 
-  // TODO: Formattare meglio chosenInstances in instanceIntervals
-
   res.send({
     price,
-    chosenInstances,
+    instances: chosenInstances
   });
 });
 
