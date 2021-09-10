@@ -7,7 +7,7 @@ const rentalController = require('../../controllers/rental.controller');
 const router = express.Router();
 
 router.route('/')
-    .post(validate(rentalValidation.addRental), rentalController.addRental)
+    .post(auth('basic'), validate(rentalValidation.addRental), rentalController.addRental)
 
 router.route('/:rentalId/'); // TODO: Implementare
 
