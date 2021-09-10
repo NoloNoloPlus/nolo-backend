@@ -25,8 +25,8 @@ const queryProducts = async (filter, projection, options) => {
  * @returns {Promise<QueryResult>}
  */
 const queryProduct = async (filter, projection = {}, options = {}) => {
-  const products = await Product.findOne(filter, projection, options);
-  return products;
+  const product = await Product.findOne(filter, projection, options);
+  return product;
 };
 
 const updateProduct = async (filter, update) => {

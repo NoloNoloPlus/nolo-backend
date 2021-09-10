@@ -256,6 +256,22 @@ const addRental = catchAsync(async (req, res) => {
     res.status(httpStatus.OK).send();
 })
 
+const getRental = catchAsync(async (req, res) => {
+    const { rentalId } = req.params;
+
+    const filter = {
+        _id: rentalId
+    };
+    let result = await rentalService.queryRental(filter);
+
+    if (!result) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Rental id not found');
+    }
+
+    res.send(result);
+})
+
 module.exports = {
-    addRental
+    addRental,
+    getRental
 }

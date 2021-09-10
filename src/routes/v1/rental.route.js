@@ -9,6 +9,7 @@ const router = express.Router();
 router.route('/')
     .post(auth('basic'), validate(rentalValidation.addRental), rentalController.addRental)
 
-router.route('/:rentalId/'); // TODO: Implementare
+router.route('/:rentalId/')
+    .get(auth('basic'), validate(rentalValidation.getRental), rentalController.getRental)
 
 module.exports = router;

@@ -17,6 +17,13 @@ const addRental = {
     })
 }
 
+const getRental = {
+    params: Joi.object().keys({
+        rentalId: Joi.string().required()
+    })
+}
+
 module.exports = {
-    addRental
+    addRental,
+    getRental
 }
