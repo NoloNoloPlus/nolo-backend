@@ -158,6 +158,11 @@ const getQuote = catchAsync(async (req, res) => {
   });
 });
 
+const addProduct = catchAsync(async (req, res) => {
+  const product = await productService.createProduct(req.body);
+  res.status(httpStatus.CREATED).send(product);
+});
+
 module.exports = {
   getProducts,
   getProduct,
@@ -165,4 +170,5 @@ module.exports = {
   getProductInstance,
   getAvailability,
   getQuote,
+  addProduct
 };

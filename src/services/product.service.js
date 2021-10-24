@@ -33,8 +33,18 @@ const updateProduct = async (filter, update) => {
   return Product.updateOne(filter, update, {strict: false})
 }
 
+/**
+ * Create a user
+ * @param {Object} productBody
+ * @returns {Promise<Product>}
+ */
+const createProduct = async (productBody) => {
+  return Product.create(productBody);
+};
+
 module.exports = {
   queryProducts,
   queryProduct,
-  updateProduct
+  updateProduct,
+  createProduct
 };

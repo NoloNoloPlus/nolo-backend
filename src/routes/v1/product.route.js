@@ -8,7 +8,10 @@ const router = express.Router({ strict: true });
 
 // TODO: Aggiungere gli altri verbi
 
-router.route('/').get(validate(productValidation.getProducts), productController.getProducts);
+router
+  .route('/')
+  .get(validate(productValidation.getProducts), productController.getProducts)
+  .post(validate(productValidation.addProduct), productController.addProduct);
 // .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
 
 router.route('/:classId').get(validate(productValidation.getProduct), productController.getProduct);
