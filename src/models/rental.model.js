@@ -17,10 +17,10 @@ const rentedProductSchema = mongoose.Schema({
 const rentalSchema = mongoose.Schema({
     products: {type: Map, of: rentedProductSchema}
 },
-  {
-    timestamps: true,
-    collection: 'rentals',
-  });
+{
+  timestamps: true,
+  collection: 'rentals',
+});
 
 // add plugin that converts mongoose to json
 rentalSchema.plugin(toJSON);

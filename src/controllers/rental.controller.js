@@ -5,6 +5,8 @@ const catchAsync = require('../utils/catchAsync');
 const { productService, rentalService } = require('../services');
 const intersectingRanges = require('intersecting-ranges');
 
+const pick = require('../utils/pick');
+
 const validRanges = (ranges) => {
     for (const i in ranges) {
         const range = ranges[i];
@@ -245,12 +247,8 @@ const addRental = catchAsync(async (req, res) => {
 
         //update = {$set: {'instances.a000.availability.0.extra' : 2}}
         console.log('Update: ', update)
-        /*console.log(update)
-        console.log(update.instances);
-        console.log(Object.entries(update.instances).map(([key, value]) => value.availability))*/
-        // TODO: Riattivare
+
         productService.updateProduct(filter, update)
-        //console.log(await productService.updateProduct(filter, { $set: update }).catch((error) => console.log(error)));
     }
 
     res.status(httpStatus.OK).send();
@@ -271,7 +269,18 @@ const getRental = catchAsync(async (req, res) => {
     res.send(result);
 })
 
+const getRentals = catchAsync(async (req, res) => {
+    // TODO: Add filters
+    const filter = {
+    };
+    
+    const options = pick(req.query, ['sortBy', 'limit', 'page']);
+    const result = await rentalService.queryRentals(filter, null, options);
+    res.send(result);
+})
+
 module.exports = {
     addRental,
-    getRental
+    getRental,
+    getRentals
 }

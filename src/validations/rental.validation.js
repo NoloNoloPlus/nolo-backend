@@ -7,8 +7,8 @@ const addRental = {
                 instances: Joi.object().pattern(/^/,
                     Joi.object().keys({
                         dateRanges: Joi.array().items(Joi.object().keys({
-                            from: Joi.date().required()/*.format('YYYY/MM/DD').utc()*/,
-                            to: Joi.date().required()/*.format('YYYY/MM/DD').utc()*/
+                            from: Joi.date().required().format('YYYY-MM-DD').utc().required(),
+                            to: Joi.date().required().format('YYYY-MM-DD').utc().required()
                         }).required())
                     })
                     ).required()
@@ -23,7 +23,17 @@ const getRental = {
     })
 }
 
+const getRentals = {
+    query: Joi.object().keys({
+        sortBy: Joi.string().valid('createdAt', 'updatedAt').default('createdAt'),
+        ascending: Joi.bool().default(true),
+        limit: Joi.number().default(20),
+        page: Joi.number().default(1),
+    })
+};
+
 module.exports = {
     addRental,
-    getRental
+    getRental,
+    getRentals
 }
