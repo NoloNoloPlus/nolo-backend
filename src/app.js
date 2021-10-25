@@ -70,6 +70,86 @@ if (config.modules.user) {
   });
 }
 
+if (config.proxy.enabled) {
+  var dbproxy = require('mongodb-proxy')        
+  proxy_config = {
+    port: config.proxy.port,
+    host: config.proxy.host,
+    name: config.proxy.db
+  }
+
+  if (config.proxy.username) {
+    proxy_config.credentials = {
+      username: config.proxy.username,
+      password: config.proxy.password
+    }
+  }
+
+  var db = dbproxy.create(proxy_config)
+
+  db.configure(function (cf) {
+    // register a collection "users". (check out the tutorial Register a collection for more)        
+    for (const collection_name of config.proxy.collections) {
+        cf.register({
+          name: collection_name
+      })  
+    }
+  })
+        console.log('Adding proxy')
+    // listen for all requests under an '/api' location 
+    app.all('/db/:collection/**', function (req, res, next) {    
+      console.log('Received')
+        // prepare an info object for the routing function     
+        console.log('Params collection:')
+        console.log(req.params.collection)
+        var route = {
+            method: req.method,
+            collection: req.params.collection,
+            path: req._parsedUrl.pathname.substring('/db/'.length + req.params.collection.length),
+            query: req.query.q,
+            data: req.body,
+            req: req,
+            res: res
+        }
+
+        req.on('response', function(response) {
+          console.log('Sending response')
+          console.log(response)
+        })
+        
+        // get the post data 
+        var postdata = ""        
+        req.on('data', function (postdataChunk) {
+            postdata += postdataChunk
+        })  
+        
+        req.on('end', function () {
+            var jsonData = JSON.parse(postdata || '{}')
+            route.data = jsonData
+            console.log('Gestendo evento')
+            // pass the work on the proxy 
+            db.handle(route, () => {console.log('Fallito'); next()}, function (error, results) {
+                if (error) {
+                  console.log('Sending error')
+                  console.log(error)
+                    if (typeof (error) === 'object') {
+                        if (error.code && error.messages) {
+                            res.status(error.code).send(error.messages)
+                        } else {
+                            res.status(500).send(error.message)
+                        }
+                    } else {
+                        res.status(500).send(error)
+                    }
+                } else {
+                  console.log('Sending output')
+                    res.send(results)
+                }
+            })
+        })
+    })
+}
+
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
   next(new ApiError(httpStatus.NOT_FOUND, 'Not found'));

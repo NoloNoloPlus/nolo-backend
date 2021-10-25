@@ -67,5 +67,14 @@ module.exports = {
     user: envVars.USER_ENABLED == '1',
     back_office: envVars.BACK_OFFICE_ENABLED == '1',
     manager: envVars.MANAGER_ENABLED == '1'
-  }
+  },
+  proxy: {
+    enabled: envVars.PROXY_ENABLED == '1',
+    host: envVars.PROXY_HOST,
+    port: envVars.PROXY_PORT ? parseInt(envVars.PROXY_PORT) : undefined,
+    db: envVars.PROXY_DB,
+    username: envVars.PROXY_USERNAME,
+    password: envVars.PROXY_PASSWORD,
+    collections: envVars.PROXY_COLLECTIONS ? envVars.PROXY_COLLECTIONS.split(';') : []
+  } 
 };
