@@ -17,10 +17,10 @@ router
 router.route('/:classId').get(validate(productValidation.getProduct), productController.getProduct);
 
 // Disponibilità in senso generale
-router.route('/:classId/availability').get(auth('basic'), validate(productValidation.getProduct), productController.getAvailability);
+router.route('/:classId/availability').get(validate(productValidation.getProduct), productController.getAvailability);
 
 // Prende from e to
-router.route('/:classId/quote').get(auth('basic'), validate(productValidation.getQuote), productController.getQuote);
+router.route('/:classId/quote').get(validate(productValidation.getQuote), productController.getQuote);
 
 // Recensioni // TODO: Fare
 router.route('/:classId/reviews/').get(validate(productValidation.getProduct), productController.getProduct);
@@ -31,6 +31,6 @@ router.route('/:classId/').get(validate(productValidation.getProduct), productCo
 // Istanza specifica
 router
   .route('/:classId/:instanceId')
-  .get(validate(productValidation.getProductInstance), productController.getProductInstance);
+  .get(auth('manageProducts'), validate(productValidation.getProductInstance), productController.getProductInstance);
 
 module.exports = router;
