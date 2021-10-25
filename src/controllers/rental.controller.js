@@ -4,6 +4,8 @@ const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { productService, rentalService } = require('../services');
 const intersectingRanges = require('intersecting-ranges');
+const verifyRights = require('../utils/verifyRights');
+const Decimal = require('decimal.js');
 
 const pick = require('../utils/pick');
 
@@ -206,15 +208,47 @@ const getNewRanges = (oldRanges, removedRanges) => {
     return newRanges;
 }
 
+const computePrice = (dateRanges, availability) => {
+    let totalPrice = new Decimal(0);
+    const prices = {};
+
+    for (let availabilityRange of availability) {
+        for (let availabilityDay = new Date(availabilityRange.from); availabilityDay <= availabilityRange.to; availabilityDay.setDate(availabilityDay.getDate() + 1)) {
+            console.log('Price: ', availabilityRange.price.toString())
+            prices[availabilityDay] = new Decimal(availabilityRange.price.toString());
+        }
+    }
+
+    for (const range of dateRanges) {
+        for (let currentDay = new Date(range.from); currentDay <= range.to; currentDay.setDate(currentDay.getDate() + 1)) {
+            totalPrice = Decimal.sum(totalPrice, prices[currentDay]);
+        }
+    }
+
+    return totalPrice;
+}
+
 const addRental = catchAsync(async (req, res) => {
     const rental = req.body;
 
+    if (!verifyRights(req.userId, ['manageRentals'])) {
+        if (req.body.userId) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "userId" requires "manageRentals" capability.')
+        }
+        if (req.body.price != undefined) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "price" requires "manageRentals" capability.')
+        }
+        if (req.body.approvedBy) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "approvedBy" requires "manageRentals" capability.')
+        }
+    }
+
     console.log(req.body);
 
-    rentalService.addRental(rental);
+    let totalPrice = new Decimal(0);
+    const updates = {};
 
     for (const [productId, productRental] of Object.entries(rental.products)) {
-        const filter = { _id: productId };
         let update = { $set: {} };
         const currentProduct = (await productService.queryProduct({ _id: productId }));
 
@@ -240,6 +274,8 @@ const addRental = catchAsync(async (req, res) => {
             console.log('Product instances: ', currentProduct.instances)
             validRentedRanges(currentInstanceAvailability, instanceRental.dateRanges, productId, instanceId)
 
+            totalPrice = Decimal.sum(totalPrice, computePrice(instanceRental.dateRanges, currentInstanceAvailability));
+
             const newRanges = getNewRanges(currentInstanceAvailability, instanceRental.dateRanges)
             console.log('New ranges: ', newRanges)
             update.$set['instances.' + instanceId + '.availability'] = newRanges;
@@ -248,10 +284,21 @@ const addRental = catchAsync(async (req, res) => {
         //update = {$set: {'instances.a000.availability.0.extra' : 2}}
         console.log('Update: ', update)
 
+        updates[productId] = update;
+    }
+
+    rental.userId = req.body.userId || req.user.id;
+    rental.price = req.body.price || totalPrice.toString();
+    rental.approvedBy = req.body.approvedBy || null;
+
+    rentalService.addRental(rental);
+
+    for (const [productId, update] of Object.entries(updates)) {
+        const filter = { _id: productId };
         productService.updateProduct(filter, update)
     }
 
-    res.status(httpStatus.OK).send();
+    res.status(httpStatus.CREATED).send(rental);
 })
 
 const getRental = catchAsync(async (req, res) => {

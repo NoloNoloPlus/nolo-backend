@@ -13,7 +13,10 @@ const addRental = {
                     })
                     ).required()
             })
-            ).required()
+            ).required(),
+        userId: Joi.string(),
+        approvedBy: Joi.string(),
+        price: Joi.number()
     })
 }
 
@@ -28,7 +31,7 @@ const getRentals = {
         sortBy: Joi.string().valid('createdAt', 'updatedAt').default('createdAt'),
         ascending: Joi.bool().default(true),
         limit: Joi.number().default(20),
-        page: Joi.number().default(1),
+        page: Joi.number().default(1)
     })
 };
 

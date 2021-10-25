@@ -15,7 +15,10 @@ const rentedProductSchema = mongoose.Schema({
 }, {_id: false})
 
 const rentalSchema = mongoose.Schema({
-    products: {type: Map, of: rentedProductSchema}
+    products: {type: Map, of: rentedProductSchema},
+    user: {type: String},
+    approvedBy: {type: String},
+    price: {type: Number}
 },
 {
   timestamps: true,
