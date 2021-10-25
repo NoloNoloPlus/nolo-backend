@@ -63,4 +63,9 @@ module.exports = {
     from: envVars.EMAIL_FROM,
   },
   user_path: envVars.USER_PATH,
+  modules: {
+    user: envVars.USER_ENABLED == '1',
+    back_office: envVars.BACK_OFFICE_ENABLED == '1',
+    manager: envVars.MANAGER_ENABLED == '1'
+  }
 };

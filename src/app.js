@@ -58,15 +58,17 @@ if (config.env === 'production') {
 // v1 api routes
 app.use('/v1', routes);
 
-const userPath = path.join(__dirname, config.user_path);
+if (config.modules.user) {
+  const userPath = path.join(__dirname, config.user_path);
 
-app.use(dynamicRoutes('/', userPath))
-
-app.use('/', express.static(userPath));
-
-app.get('/', function (req, res) {
-  res.sendFile('index.html', { root: userPath });
-});
+  app.use(dynamicRoutes('/', userPath))
+  
+  app.use('/', express.static(userPath));
+  
+  app.get('/', function (req, res) {
+    res.sendFile('index.html', { root: userPath });
+  });
+}
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
