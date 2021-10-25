@@ -26,7 +26,7 @@ router.route('/:classId/quote').get(validate(productValidation.getQuote), produc
 router.route('/:classId/reviews/').get(validate(productValidation.getProduct), productController.getProduct);
 
 // Lista delle istanze
-router.route('/:classId/').get(validate(productValidation.getProduct), productController.getProductInstances);
+router.route('/:classId/').get(auth('manageProducts'), validate(productValidation.getProduct), productController.getProductInstances);
 
 // Istanza specifica
 router
