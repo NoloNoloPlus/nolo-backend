@@ -326,8 +326,34 @@ const getRentals = catchAsync(async (req, res) => {
     res.send(result);
 })
 
+const updateRental = catchAsync(async (req, res) => {
+    const { rentalId } = req.params;
+
+    const filter = {
+        _id: rentalId
+    }
+
+    const rental = req.body;
+
+    const result = await rentalService.updateRental(filter, rental);
+    res.send(result);
+})
+
+const deleteRental = catchAsync(async (req, res) => {
+    const { rentalId } = req.params;
+
+    const filter = {
+        _id: rentalId
+    }
+
+    const result = await rentalService.deleteRental(filter);
+    res.send(result);
+})
+
 module.exports = {
     addRental,
     getRental,
-    getRentals
+    getRentals,
+    updateRental,
+    deleteRental
 }

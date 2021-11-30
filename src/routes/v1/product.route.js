@@ -11,22 +11,28 @@ const router = express.Router({ strict: true });
 router
   .route('/')
   .get(validate(productValidation.getProducts), productController.getProducts)
-  .post(validate(productValidation.addProduct), productController.addProduct);
-// .post(auth('manageUsers'), validate(userValidation.createUser), userController.createUser)
+  .post(auth('manageProducts'), validate(productValidation.addProduct), productController.addProduct);
 
-router.route('/:classId').get(validate(productValidation.getProduct), productController.getProduct);
+router.route('/:classId')
+  .get(validate(productValidation.getProduct), productController.getProduct)
+  .put(auth('manageProducts'), validate(productValidation.updateProduct), productController.updateProduct)
+  .delete(auth('manageProducts'), validate(productValidation.deleteProduct), productController.deleteProduct);
 
 // Disponibilità in senso generale
-router.route('/:classId/availability').get(validate(productValidation.getProduct), productController.getAvailability);
+router.route('/:classId/availability')
+  .get(validate(productValidation.getProduct), productController.getAvailability);
 
 // Prende from e to
-router.route('/:classId/quote').get(validate(productValidation.getQuote), productController.getQuote);
+router.route('/:classId/quote')
+  .get(validate(productValidation.getQuote), productController.getQuote);
 
 // Recensioni // TODO: Fare
-router.route('/:classId/reviews/').get(validate(productValidation.getProduct), productController.getProduct);
+router.route('/:classId/reviews/')
+  .get(validate(productValidation.getProduct), productController.getProduct);
 
 // Lista delle istanze
-router.route('/:classId/').get(auth('manageProducts'), validate(productValidation.getProduct), productController.getProductInstances);
+router.route('/:classId/')
+  .get(auth('manageProducts'), validate(productValidation.getProduct), productController.getProductInstances);
 
 // Istanza specifica
 router

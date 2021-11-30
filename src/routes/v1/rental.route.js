@@ -12,5 +12,7 @@ router.route('/')
 
 router.route('/:rentalId/')
     .get(auth('basic'), validate(rentalValidation.getRental), rentalController.getRental)
+    .put(auth('manageRentals'), validate(rentalValidation.updateRental), rentalController.updateRental)
+    .delete(auth('manageRentals'), validate(rentalValidation.deleteRental), rentalController.deleteRental)
 
 module.exports = router;

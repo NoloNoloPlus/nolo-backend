@@ -30,7 +30,7 @@ const queryProduct = async (filter, projection = {}, options = {}) => {
 };
 
 const updateProduct = async (filter, update) => {
-  return Product.updateOne(filter, update, {strict: false})
+  return Product.findOneAndUpdate(filter, update, {strict: false})
 }
 
 /**
@@ -39,12 +39,22 @@ const updateProduct = async (filter, update) => {
  * @returns {Promise<Product>}
  */
 const createProduct = async (productBody) => {
-  return Product.create(productBody);
+  return Product.findOneAndDelete(productBody);
+};
+
+/**
+ * Delete a product
+ * @param {Object} filter - Mongo filter
+ * @returns {Promise<Product>}
+ */
+const deleteProduct = async (filter) => {
+  return Product.deleteOne(filter);
 };
 
 module.exports = {
   queryProducts,
   queryProduct,
+  createProduct,
   updateProduct,
-  createProduct
+  deleteProduct
 };

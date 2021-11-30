@@ -163,6 +163,22 @@ const addProduct = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send(product);
 });
 
+const updateProduct = catchAsync(async (req, res) => {
+  const filter = {
+    _id: req.params.classId,
+  };
+  const product = await productService.updateProduct(filter, req.body);
+  res.send(product);
+});
+
+const deleteProduct = catchAsync(async (req, res) => {
+  const filter = {
+    _id: req.params.classId,
+  };
+  const product = await productService.deleteProduct(filter);
+  res.status(httpStatus.OK).send(product);
+});
+
 module.exports = {
   getProducts,
   getProduct,
@@ -170,5 +186,7 @@ module.exports = {
   getProductInstance,
   getAvailability,
   getQuote,
-  addProduct
+  addProduct,
+  updateProduct,
+  deleteProduct
 };
