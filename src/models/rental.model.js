@@ -1,24 +1,52 @@
 const mongoose = require('mongoose');
 const { toJSON, paginate } = require('./plugins');
 
+const discountSchema = mongoose.Schema({
+    name: {type: String},
+    value: {type: Number},
+    description: {
+        type: String,
+        default: ''
+    }
+}, {_id: false})
+
 const dateRangeSchema = mongoose.Schema({
     from: {type: Date},
-    to: {type: Date}
+    to: {type: Date},
+    price: {
+        type: mongoose.Types.Decimal128,
+        default: 0
+    },
+    discounts: {
+        type: [discountSchema],
+        default: []
+    }
 }, {_id: false})
 
 const rentedInstanceSchema = mongoose.Schema({
-    dateRanges: {type: [dateRangeSchema]}
+    dateRanges: {type: [dateRangeSchema]},
+    discounts: {
+        type: [discountSchema],
+        default: []
+    }
 }, {_id: false})
 
 const rentedProductSchema = mongoose.Schema({
-    instances: {type: Map, of: rentedInstanceSchema}
+    instances: {type: Map, of: rentedInstanceSchema},
+    discounts: {
+        type: [discountSchema],
+        default: []
+    }
 }, {_id: false})
 
 const rentalSchema = mongoose.Schema({
     products: {type: Map, of: rentedProductSchema},
     user: {type: String},
     approvedBy: {type: String},
-    price: {type: Number}
+    discounts: {
+        type: [discountSchema],
+        default: []
+    }
 },
 {
   timestamps: true,

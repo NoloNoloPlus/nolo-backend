@@ -1,6 +1,15 @@
 const Joi = require('joi').extend(require('@joi/date'));
 const { objectId } = require('./custom.validation');
 
+const discount = (required) => Joi.object().keys({
+    name: required ? Joi.string().required() : Joi.string(),
+    type: required ? Joi.string().valid('percentage', 'fixed').required() : Joi.string(),
+    value: required ? Joi.number().required() : Joi.number(),
+    description: Joi.string()
+})
+
+const discounts = (required) => Joi.array().items(discount(required))
+
 const addRental = {
     body: Joi.object().keys({
         products: Joi.object().pattern(/^/, 
@@ -9,15 +18,18 @@ const addRental = {
                     Joi.object().keys({
                         dateRanges: Joi.array().items(Joi.object().keys({
                             from: Joi.date().required().format('YYYY-MM-DD').utc().required(),
-                            to: Joi.date().required().format('YYYY-MM-DD').utc().required()
-                        }).required())
+                            to: Joi.date().required().format('YYYY-MM-DD').utc().required(),
+                            discounts: discounts(true).default([])
+                        }).required()),
+                        discounts: discounts(true).default([])
                     })
-                    ).required()
+                    ).required(),
+                discounts: discounts(true).default([])
             })
             ).required(),
         userId: Joi.string(),
         approvedBy: Joi.string(),
-        price: Joi.number()
+        discounts: discounts(true).default([])
     })
 }
 
@@ -46,15 +58,18 @@ const updateRental = {
                     Joi.object().keys({
                         dateRanges: Joi.array().items(Joi.object().keys({
                             from: Joi.date().required().format('YYYY-MM-DD').utc(),
-                            to: Joi.date().required().format('YYYY-MM-DD').utc()
-                        }))
+                            to: Joi.date().required().format('YYYY-MM-DD').utc(),
+                            discounts: discounts(false)
+                        })),
+                        discounts: discounts(false)
                     })
-                )
+                ),
+                discounts: discounts(false)
             })
         ),
         userId: Joi.string(),
         approvedBy: Joi.string(),
-        price: Joi.number()
+        discounts: discounts(false)
     }),
     params: Joi.object().keys({
         rentalId: Joi.custom(objectId).required()
