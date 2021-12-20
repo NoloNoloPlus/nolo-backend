@@ -64,7 +64,7 @@ const sameIntervals = (ranges1, ranges2) => {
         const [from1, to1] = ranges1[i];
         const [from2, to2] = ranges2[i];
 
-        if (from1 != from2 || to1 != to2) {
+        if (from1.getTime() != from2.getTime() || to1.getTime() != to2.getTime()) {
             return false;
         }
     }
@@ -81,8 +81,24 @@ const validRentedRanges = (availability, rentedRanges, productId, instanceId) =>
 
     const rentedRangesParsed = rentedRanges.map(range => [range.from, range.to])
 
-    const intersection = intersectingRanges(instanceAvailability.concat(rentedRangesParsed))
+    const rentedRangesForIntersection = rentedRanges.map(range => {
+        const parsedFrom = new Date(range.from)
+        const parsedTo = new Date(range.to)
+
+        parsedFrom.setMilliseconds(parsedFrom.getMilliseconds() - 1)
+        parsedTo.setMilliseconds(parsedTo.getMilliseconds() + 1)
+        return [parsedFrom, parsedTo]
+    })
+
+    const intersection = intersectingRanges(instanceAvailability.concat(rentedRangesForIntersection))
+
+    for (const [intersectionFrom, intersectionTo] of intersection) {
+        intersectionFrom.setTime(Math.round(intersectionFrom.getTime() / 1000) * 1000)
+        intersectionTo.setTime(Math.round(intersectionTo.getTime() / 1000) * 1000)
+    }
+
     console.log('Intersection: ', intersection)
+    console.log('Rented ranges: ', rentedRangesParsed)
     if (!sameIntervals(intersection, rentedRangesParsed)) {
         throw new ApiError(httpStatus.BAD_REQUEST, `Rented ranges for instance ${instanceId} of product ${productId} are not available.`)
     }
@@ -208,7 +224,7 @@ const getNewRanges = (oldRanges, removedRanges) => {
     return newRanges;
 }
 
-const computePrice = (dateRanges, availability) => {
+const computeDateRangePrice = (dateRange, availability) => {
     let totalPrice = new Decimal(0);
     const prices = {};
 
@@ -219,33 +235,53 @@ const computePrice = (dateRanges, availability) => {
         }
     }
 
-    for (const range of dateRanges) {
-        for (let currentDay = new Date(range.from); currentDay <= range.to; currentDay.setDate(currentDay.getDate() + 1)) {
-            totalPrice = Decimal.sum(totalPrice, prices[currentDay]);
-        }
+    console.log('DateRange:', dateRange)
+
+    for (let currentDay = new Date(dateRange.from); currentDay <= dateRange.to; currentDay.setDate(currentDay.getDate() + 1)) {
+        totalPrice = Decimal.sum(totalPrice, prices[currentDay]);
     }
 
     return totalPrice;
 }
 
+const verifyRentalRights = (user, rental, allowEmptyDiscounts) => {
+    if (!verifyRights(user, ['manageRentals'])) {
+        if (rental.userId) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "userId" requires "manageRentals" capability.')
+        }
+        if (rental.approvedBy) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "approvedBy" requires "manageRentals" capability.')
+        }
+
+        const checkDiscounts = (discounts) => {
+            if (discounts && !(discounts.length == 0 && allowEmptyDiscounts)) {
+                throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "discounts" requires "manageRentals" capability.')
+            }
+        }
+
+        checkDiscounts(rental.discounts)
+
+        for (const productRental of Object.values(rental.products)) {
+            checkDiscounts(productRental.discounts)
+
+            for (const rentalInstance of Object.values(productRental.instances)) {
+                checkDiscounts(rentalInstance.discounts)
+
+                for (const dateRange of Object.values(rentalInstance.dateRanges)) {
+                    checkDiscounts(dateRange.discounts)
+                }
+            }
+        }
+    }
+}
+
 const addRental = catchAsync(async (req, res) => {
     const rental = req.body;
 
-    if (!verifyRights(req.userId, ['manageRentals'])) {
-        if (req.body.userId) {
-            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "userId" requires "manageRentals" capability.')
-        }
-        if (req.body.price != undefined) {
-            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "price" requires "manageRentals" capability.')
-        }
-        if (req.body.approvedBy) {
-            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "approvedBy" requires "manageRentals" capability.')
-        }
-    }
+    verifyRentalRights(req.user, rental, true);
 
     console.log(req.body);
 
-    let totalPrice = new Decimal(0);
     const updates = {};
 
     for (const [productId, productRental] of Object.entries(rental.products)) {
@@ -274,11 +310,13 @@ const addRental = catchAsync(async (req, res) => {
             console.log('Product instances: ', currentProduct.instances)
             validRentedRanges(currentInstanceAvailability, instanceRental.dateRanges, productId, instanceId)
 
-            totalPrice = Decimal.sum(totalPrice, computePrice(instanceRental.dateRanges, currentInstanceAvailability));
-
             const newRanges = getNewRanges(currentInstanceAvailability, instanceRental.dateRanges)
             console.log('New ranges: ', newRanges)
             update.$set['instances.' + instanceId + '.availability'] = newRanges;
+
+            for (let i = 0; i < instanceRental.dateRanges.length; i++) {
+                instanceRental.dateRanges[i].price = computeDateRangePrice(instanceRental.dateRanges[i], currentInstanceAvailability);
+            }
         }
 
         //update = {$set: {'instances.a000.availability.0.extra' : 2}}
@@ -288,7 +326,6 @@ const addRental = catchAsync(async (req, res) => {
     }
 
     rental.userId = req.body.userId || req.user.id;
-    rental.price = req.body.price || totalPrice.toString();
     rental.approvedBy = req.body.approvedBy || null;
 
     rentalService.addRental(rental);
@@ -334,6 +371,10 @@ const updateRental = catchAsync(async (req, res) => {
     }
 
     const rental = req.body;
+
+    verifyRentalRights(req.user, rental, false);
+
+    // TODO: Updating rentals should change the availability of the products
 
     const result = await rentalService.updateRental(filter, rental);
     res.send(result);
