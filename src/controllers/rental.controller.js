@@ -269,6 +269,10 @@ const verifyRentalRights = (user, rental, allowEmptyDiscounts) => {
 
                 for (const dateRange of Object.values(rentalInstance.dateRanges)) {
                     checkDiscounts(dateRange.discounts)
+
+                    if (dateRange.price) {
+                        throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "price" requires "manageRentals" capability.')
+                    }
                 }
             }
         }
@@ -315,7 +319,7 @@ const addRental = catchAsync(async (req, res) => {
             update.$set['instances.' + instanceId + '.availability'] = newRanges;
 
             for (let i = 0; i < instanceRental.dateRanges.length; i++) {
-                instanceRental.dateRanges[i].price = computeDateRangePrice(instanceRental.dateRanges[i], currentInstanceAvailability);
+                instanceRental.dateRanges[i].price = instanceRental.dateRanges[i].price || computeDateRangePrice(instanceRental.dateRanges[i], currentInstanceAvailability);
             }
         }
 
