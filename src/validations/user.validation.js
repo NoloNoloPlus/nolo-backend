@@ -1,13 +1,10 @@
 const Joi = require('joi');
-const { password, objectId } = require('./custom.validation');
+const { password, objectId, user } = require('./custom.validation');
 
 const createUser = {
-  body: Joi.object().keys({
-    email: Joi.string().required().email(),
-    password: Joi.string().required().custom(password),
-    name: Joi.string().required(),
+  body: user(true, {
     role: Joi.string().required().valid('user', 'employee', 'manager', 'admin'),
-  }),
+  })
 };
 
 const getUsers = {
@@ -26,16 +23,15 @@ const getUser = {
   }),
 };
 
+// TODO: A manager can't change someone else's passwords
+
 const updateUser = {
   params: Joi.object().keys({
     userId: Joi.required().custom(objectId),
   }),
-  body: Joi.object()
-    .keys({
-      email: Joi.string().email(),
-      password: Joi.string().custom(password),
-      name: Joi.string(),
-    })
+  body: user(false, {
+      role: Joi.string().required().valid('user', 'employee', 'manager', 'admin'),
+  })
     .min(1),
 };
 
