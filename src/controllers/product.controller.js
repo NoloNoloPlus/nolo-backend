@@ -4,6 +4,7 @@ const Decimal = require('decimal.js');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { productService } = require('../services');
+const { applyDiscounts } = require('../utils/misc');
 
 const pick = require('../utils/pick');
 
@@ -122,7 +123,6 @@ const getQuote = catchAsync(async (req, res) => {
 
   const { instances } = result.toObject();
 
-  let price = new Decimal(0);
   const chosenInstances = {};
 
   for (const day = new Date(req.query.from); day <= req.query.to; day.setDate(day.getDate() + 1)) {
@@ -132,7 +132,14 @@ const getQuote = catchAsync(async (req, res) => {
     for (const [instanceId, instance] of instances.entries()) {
       const matchingInterval = instance.toObject().availability.find((interval) => day >= interval.from && day <= interval.to);
       if (matchingInterval) {
-        matchingIntervals.push({ id: instanceId, price: new Decimal(matchingInterval.price.toString()) });
+        const intervalDiscounts = matchingInterval.discounts || []
+
+        matchingIntervals.push({ 
+          id: instanceId,
+          price: new Decimal(matchingInterval.price.toString()),
+          discounts: intervalDiscounts,
+          discountedPrice: applyDiscounts(matchingInterval.price, intervalDiscounts)
+        });
       }
     }
 
@@ -140,21 +147,28 @@ const getQuote = catchAsync(async (req, res) => {
       throw new ApiError(httpStatus.BAD_REQUEST, 'Interval not available.');
     }
 
-    matchingIntervals.sort((interval1, interval2) => interval1.price.minus(interval2.price).toNumber());
+    matchingIntervals.sort((interval1, interval2) => interval1.discountedPrice - interval2.discountedPrice);
 
     const chosenId = matchingIntervals[0].id;
 
     if (!(chosenId in chosenInstances)) {
-      chosenInstances[chosenId] = { dateRanges: [] }
+      chosenInstances[chosenId] = {
+        dateRanges: [],
+        discounts: instances.get(chosenId).toObject().discounts || []
+      }
     }
 
-    chosenInstances[chosenId].dateRanges.push({from: new Date(day), to: new Date(day)});
-    price = price.plus(matchingIntervals[0].price);
+    chosenInstances[chosenId].dateRanges.push({
+      from: new Date(day),
+      to: new Date(day),
+      price: matchingIntervals[0].price,
+      discounts: matchingIntervals[0].discounts
+    });
   }
 
   res.send({
-    price,
-    instances: chosenInstances
+    instances: chosenInstances,
+    discounts: result.toObject().discounts || []
   });
 });
 
