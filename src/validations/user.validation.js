@@ -30,7 +30,7 @@ const updateUser = {
     userId: Joi.required().custom(objectId),
   }),
   body: user(false, {
-      role: Joi.string().required().valid('user', 'employee', 'manager', 'admin'),
+      role: Joi.string().valid('user', 'employee', 'manager', 'admin'),
   })
     .min(1),
 };
