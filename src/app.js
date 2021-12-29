@@ -15,6 +15,7 @@ const routes = require('./routes/v1');
 const { errorConverter, errorHandler } = require('./middlewares/error');
 const ApiError = require('./utils/ApiError');
 const dynamicRoutes = require('./middlewares/dynamicRoutes')
+const fileUpload = require('express-fileupload');
 
 const app = express();
 
@@ -50,6 +51,8 @@ app.options('*', cors());
 app.use(passport.initialize());
 passport.use('jwt', jwtStrategy);
 
+app.use(fileUpload());
+
 // limit repeated failed requests to auth endpoints
 if (config.env === 'production') {
   app.use('/v1/auth', authLimiter);
@@ -67,6 +70,30 @@ if (config.modules.user) {
   
   app.get('/', function (req, res) {
     res.sendFile('index.html', { root: userPath });
+  });
+}
+
+if (config.modules.back_office) {
+  const backOfficePath = path.join(__dirname, config.back_office_path);
+
+  app.use(dynamicRoutes('/back/', backOfficePath, 'dynamicRoutes.js', false))
+  
+  app.use('/back/', express.static(backOfficePath));
+  
+  app.get('/back/', function (req, res) {
+    res.sendFile('index.html', { root: backOfficePath });
+  });
+}
+
+if (config.modules.manager) {
+  const managerPath = path.join(__dirname, config.manager_path);
+
+  app.use(dynamicRoutes('/manager/', managerPath, 'dynamicRoutes.js', false))
+  
+  app.use('/manager/', express.static(managerPath));
+  
+  app.get('/manager/', function (req, res) {
+    res.sendFile('index.html', { root: managerPath });
   });
 }
 
