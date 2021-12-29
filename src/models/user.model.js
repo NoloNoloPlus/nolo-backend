@@ -93,7 +93,17 @@ const userSchema = mongoose.Schema(
     },
     address: {
       type: addressSchema,
-      required: true,
+      required: false,
+      default: {
+        street: {
+          line1: '',
+          line2: ''
+        },
+        city: '',
+        state: '',
+        zip: '',
+        country: '',
+      },
     },
     avatarUrl: {
       type: String,
