@@ -21,12 +21,21 @@ module.exports = (baseUrl, folder, routePath='dynamicRoutes.js', strict=true) =>
         for (var route of routes) {
             route = mergeUrls(baseUrl, route);
 
-            const re = /\[(.+)\]/g;
+            const re = /\[([^[:]+):?(.+)?\]/g;
             var matches;
             const routeReplacements = [];
             while ((matches = re.exec(route)) != null) {
+                console.log('Match: ', matches)
                 const match = matches[1];
-                routeReplacements.push(`${match}=:${match}`)
+                let replacement;
+                if (matches[2]) {
+                    replacement = matches[2];
+                }
+                else {
+                    replacement = matches[1];
+                }
+                console.log('Match:', match, 'Replacement:', replacement)
+                routeReplacements.push(`${match}=:${replacement}`)
             }
 
             const routeRe = /\[(.+)\]/g;
