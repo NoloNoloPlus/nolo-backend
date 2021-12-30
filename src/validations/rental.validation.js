@@ -1,14 +1,5 @@
 const Joi = require('joi').extend(require('@joi/date'));
-const { objectId } = require('./custom.validation');
-
-const discount = (required) => Joi.object().keys({
-    name: required ? Joi.string().required() : Joi.string(),
-    type: required ? Joi.string().valid('percentage', 'fixed').required() : Joi.string(),
-    value: required ? Joi.number().required() : Joi.number(),
-    description: Joi.string()
-})
-
-const discounts = (required) => Joi.array().items(discount(required))
+const { discounts, objectId } = require('./custom.validation');
 
 const addRental = {
     body: Joi.object().keys({
