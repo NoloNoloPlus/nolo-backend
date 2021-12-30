@@ -12,6 +12,9 @@ const queryRentals = async (filter, projection, options) => {
     if (options) {
       options.projection = projection;
     }
+    else {
+        options = {}
+    }
     return Rental.paginate(filter, options);
 };
 

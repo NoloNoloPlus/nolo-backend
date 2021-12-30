@@ -1,24 +1,23 @@
 const httpStatus = require('http-status');
-const mergeRanges = require('merge-ranges');
-const Decimal = require('decimal.js');
 const ApiError = require('../utils/ApiError');
 const catchAsync = require('../utils/catchAsync');
 const { productService } = require('../services');
-const { applyDiscounts } = require('../utils/misc');
 const dijkstra = require('dijkstrajs');
+
+const { computeRentabilities } = require('../utils/ranges');
 
 const pick = require('../utils/pick');
 
 const getProducts = catchAsync(async (req, res) => {
   const filter = {
-    stars: { $gte: req.query.stars },
+    //stars: { $gte: req.query.stars },
   };
 
-  if (req.query.keywords?.length > 0) {
+  /*if (req.query.keywords?.length > 0) {
     filter.$text = {
       $search: req.query.keywords,
     };
-  }
+  }*/
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   const result = await productService.queryProducts(filter, null, options);
@@ -36,7 +35,6 @@ const getProduct = catchAsync(async (req, res) => {
   }
 
   result = result._doc;
-  delete result.instances;
 
   res.send(result);
 });
@@ -81,7 +79,7 @@ const getProductInstance = catchAsync(async (req, res) => {
   res.send(result._doc.instances[req.params.instanceId]);
 });
 
-const getAvailability = catchAsync(async (req, res) => {
+const getRentability = catchAsync(async (req, res) => {
   const filter = {
     _id: req.params.classId,
   };
@@ -97,15 +95,8 @@ const getAvailability = catchAsync(async (req, res) => {
 
   const instances = result.toObject().instances;
 
-  let intervals = [];
-
-  for (const [_, instance] of instances.entries()) {
-    intervals = intervals.concat(mergeRanges(instance.toObject().availability.map((interval) => [interval.from, interval.to])));
-  }
-
-  const availability = mergeRanges(intervals);
-
-  res.send(availability);
+  const rentabilities = await computeRentabilities(instances);
+  res.send(rentabilities);
 });
 
 
@@ -119,8 +110,6 @@ const createGraph = (instances, exchangeCost, startDay, endDay) => {
       ];
     }
   }
-
-  console.log('Initial A availability:', instances.A.availability);
 
   const graph = {};
 
@@ -253,9 +242,11 @@ const prepareData = (instances, startDay, endDay) => {
 
   const newInstances = {};
   for (const [instanceId, instance] of Object.entries(instances)) {
-    const newInstance = {
-      availability: []
-    }
+    console.log('Instance AAAAAAAAAAAAAAA:', instance.toObject())
+    const newInstance = instance.toObject();
+    
+    newInstance.availability = [];
+
     // instance.availability = instance.availability.toObject();
 
     // TODO: è il caso di ordinare le dateRanges?
@@ -433,8 +424,13 @@ const getQuote = catchAsync(async (req, res) => {
   }
 
   // TODO: Controllo che il from sia prima del to
-
   const { instances } = result.toObject();
+
+  const rentabilities = await computeRentabilities(req.params.classId, instances);
+
+  for (const [instanceId, rentability] of Object.entries(rentabilities)) {
+    instances[instanceId].availability = rentability;
+  }
 
   console.log('Query', req.query);
 
@@ -482,7 +478,7 @@ module.exports = {
   getProduct,
   getProductInstances,
   getProductInstance,
-  getAvailability,
+  getRentability,
   getQuote,
   addProduct,
   updateProduct,

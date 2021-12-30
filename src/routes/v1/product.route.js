@@ -19,8 +19,8 @@ router.route('/:classId')
   .delete(auth('manageProducts'), validate(productValidation.deleteProduct), productController.deleteProduct);
 
 // Disponibilità in senso generale
-router.route('/:classId/availability')
-  .get(validate(productValidation.getProduct), productController.getAvailability);
+router.route('/:classId/rentability')
+  .get(validate(productValidation.getProduct), productController.getRentability);
 
 // Prende from e to
 router.route('/:classId/quote')
