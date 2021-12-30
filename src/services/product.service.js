@@ -1,5 +1,7 @@
 const { Product } = require('../models');
 
+const misc = require('../utils/misc');
+
 /**
  * Query for products
  * @param {Object} filter - Mongo filter
@@ -30,7 +32,21 @@ const queryProduct = async (filter, projection = {}, options = {}) => {
 };
 
 const updateProduct = async (filter, update) => {
-  return Product.findOneAndUpdate(filter, update, {strict: false})
+  const product = await Product.findOne(filter);
+  if (!product) {
+    throw new ApiError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+  
+  update = misc.replaceDelete(update);
+  console.log('Update:', update)
+  Object.assign(product, update);
+
+  console.log('Updated product:', product);
+
+
+  await product.save();
+
+  return product;
 }
 
 /**
@@ -39,7 +55,7 @@ const updateProduct = async (filter, update) => {
  * @returns {Promise<Product>}
  */
 const createProduct = async (productBody) => {
-  return Product.findOneAndDelete(productBody);
+  return Product.create(productBody);
 };
 
 /**
