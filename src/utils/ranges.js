@@ -113,11 +113,11 @@ const edgeIntersection = (ranges) => {
         newRanges.push([newFrom, newTo])
     }
 
-    console.log('Computing magic intersection with ', newRanges)
+    // console.log('Computing magic intersection with ', newRanges)
 
     const intersection = intersectingRanges(newRanges);
 
-    console.log('Result: ', intersection)
+    // console.log('Result: ', intersection)
 
     // Round to the nearest second
     const finalRanges = []
@@ -148,21 +148,25 @@ const edgeIntersection = (ranges) => {
 }
 
 const removeRange = (oldRange, removedRange) => {
-    console.log('Removing ', removedRange, ' from ', oldRange);
-    console.log('Inverted:', invertDateRange(removedRange))
+    /*console.log('Removing ', removedRange, ' from ', oldRange);
+    console.log('Inverted:', invertDateRange(removedRange))*/
 
     const invertedRange = invertDateRange(removedRange)
     const ranges = [oldRange, ...invertedRange]
-    console.log('Ranges: ', ranges)
+    // console.log('Ranges: ', ranges)
     const intersection = edgeIntersection(ranges);
 
-    console.log('Intersection: ', intersection);
+    // console.log('Intersection: ', intersection);
 
     return intersection
 }
 
 
 const getNewRanges = (oldRanges, removedRanges) => {
+    if (removedRanges.length == 0) {
+        return oldRanges;
+    }
+
     const newRanges = [];
     for (const oldRange of oldRanges) {
         console.log('Checking old range ', oldRange);
@@ -189,29 +193,54 @@ const getNewRanges = (oldRanges, removedRanges) => {
     return newRanges;
 }
 
+const computeRentability = (productId, instanceId, instance, rentals) => {
+    if (instance.availability.toObject) {
+        instance.availability = instance.availability.toObject();
+    }
+
+    const mapToObject = (map) => {
+        return Array.from(map).reduce((obj, [key, value]) => (
+            Object.assign(obj, { [key]: value }) // Be careful! Maps can have non-String keys; object literals can't.
+          ), {});
+        }          
+
+    const removedDateRanges = []
+
+    // console.log('=======')
+    for (const rental of rentals) {
+        // console.log('Rental: ', rental)
+        const products = mapToObject(rental.products.toObject());
+        // console.log('Products: ', products)
+        // console.log('Rental products: ', Object.keys(products))
+        if (products[productId]) {
+            console.log('Rental:', rental);
+        }
+        if (products[productId] && products[productId].toObject().instances[instanceId]) {
+            removedDateRanges.push(...rental.instances[instanceId].dateRanges);
+        }
+    }
+    // console.log('===========')
+
+    // console.log('Removed date ranges: ', removedDateRanges);
+    // console.log('Availability: ', instance.availability);
+
+    const newRanges =  getNewRanges(instance.availability, removedDateRanges);
+    //console.log('New ranges: ', newRanges);
+    return newRanges;
+}
+
 const computeRentabilities = async (productId, instances) => {
     const rentabilities = {};
   
     const rentals = (await rentalService.queryRentals()).results;
-    console.log('Rentals:', rentals);
+    // console.log('Rentals:', rentals);
   
     for (const [instanceId, instance] of Object.entries(instances)) {
-        console.log('Instance:', instance);
-        if (instance.availability.toObject) {
-            instance.availability = instance.availability.toObject();
-        }
-  
-      const removedDateRanges = []
-  
-      for (const rental of rentals) {
-          console.log('Rental:', rental);
-        if (rental.products[productId] && rental.products[productId].toObject().instances[instanceId]) {
-          removedDateRanges.push(...rental.instances[instanceId].dateRanges);
-        }
-      }
-  
-      rentabilities[instanceId] = getNewRanges(instance.availability, removedDateRanges);
+        // console.log('Instance:', instance);
+        rentabilities[instanceId] = computeRentability(productId, instanceId, instance, rentals);
     }
+
+    // console.log('Rentabilities: ', rentabilities);
   
     return rentabilities;
 }
@@ -221,7 +250,7 @@ const validRentedRanges = (availability, rentedRanges, productId, instanceId, ty
 
     const instanceAvailability = mergeDateRanges(availability.map(range => [range.from, range.to]))
 
-    console.log('Instance availability: ', instanceAvailability)
+    // console.log('Instance availability: ', instanceAvailability)
 
     const rentedRangesParsed = rentedRanges.map(range => [range.from, range.to])
 
