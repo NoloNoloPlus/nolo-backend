@@ -87,7 +87,7 @@ const user = (creation, additionalFields) => {
 
 const discount = (required) => Joi.object().keys({
   name: required ? Joi.string().required() : Joi.string(),
-  type: required ? Joi.string().valid('percentage', 'fixed').required() : Joi.string(),
+  type: required ? Joi.string().valid('percentage', 'fixed', 'containsWeekend').required() : Joi.string(),
   value: required ? Joi.number().required() : Joi.number(),
   description: Joi.string()
 })
