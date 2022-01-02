@@ -108,9 +108,24 @@ const addRental = catchAsync(async (req, res) => {
             // TODO: Check if the rentability is valid
             validRentedRanges(rentability, instanceRental.dateRanges, productId, instanceId, 'rentable')
 
-            /*for (let i = 0; i < instanceRental.dateRanges.length; i++) {
-                instanceRental.dateRanges[i].price = instanceRental.dateRanges[i].price || computeDateRangePrice(instanceRental.dateRanges[i], currentInstanceAvailability);
-            }*/
+            for (let i = 0; i < instanceRental.dateRanges.length; i++) {
+                let matchingDateRange = null;
+                for (const currentDateRange of currentInstanceAvailability) {
+                    if (instanceRental.dateRanges[i].from >= currentDateRange.from && instanceRental.dateRanges[i].to <= currentDateRange.to) {
+                        if (matchingDateRange) {
+                            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Date range ${instanceRental.dateRanges[i].from} - ${instanceRental.dateRanges[i].to} has multiple matching instance dateRanges.`);
+                        }
+                        
+                        matchingDateRange = currentDateRange;
+                    }
+                }
+
+                if (!matchingDateRange) {
+                    throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Date range ${instanceRental.dateRanges[i].from} - ${instanceRental.dateRanges[i].to} has no matching instance dateRanges.`);
+                }
+
+                instanceRental.dateRanges[i].price = instanceRental.dateRanges[i].price || matchingDateRange.price;
+            }
         }
     }
 
@@ -119,7 +134,8 @@ const addRental = catchAsync(async (req, res) => {
 
     rentalService.addRental(rental);
 
-    res.status(httpStatus.CREATED).send(rental);
+    // TODO: Non contiene price, sistemare harmonization
+    res.status(httpStatus.CREATED).send(harmonizeResult(rental));
 })
 
 const getRental = catchAsync(async (req, res) => {
