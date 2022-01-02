@@ -7,6 +7,7 @@ const verifyRights = require('../utils/verifyRights');
 const Decimal = require('decimal.js');
 
 const { validRentedRanges, computeRentabilities } = require('../utils/ranges');
+const { harmonizeResult } = require('../utils/misc');
 
 const pick = require('../utils/pick');
 
@@ -100,12 +101,12 @@ const addRental = catchAsync(async (req, res) => {
             console.log('Current instance availability: ', currentInstanceAvailability)
             validRentedRanges(currentInstanceAvailability, instanceRental.dateRanges, productId, instanceId, 'available')
 
-            const rentability = (await computeRentabilities(productId, { current: { availability: currentInstanceAvailability }}, instanceRental.dateRanges)).current;
+            const rentability = (await computeRentabilities(productId, { [instanceId]: { availability: currentInstanceAvailability }}, instanceRental.dateRanges))[instanceId];
 
             console.log('Rentability:', rentability)
 
             // TODO: Check if the rentability is valid
-            // validRentedRanges(rentability, instanceRental.dateRanges, productId, instanceId, 'rentable')
+            validRentedRanges(rentability, instanceRental.dateRanges, productId, instanceId, 'rentable')
 
             /*for (let i = 0; i < instanceRental.dateRanges.length; i++) {
                 instanceRental.dateRanges[i].price = instanceRental.dateRanges[i].price || computeDateRangePrice(instanceRental.dateRanges[i], currentInstanceAvailability);
@@ -133,7 +134,7 @@ const getRental = catchAsync(async (req, res) => {
         throw new ApiError(httpStatus.NOT_FOUND, 'Rental id not found');
     }
 
-    res.send(result);
+    res.send(harmonizeResult(result));
 })
 
 const getRentals = catchAsync(async (req, res) => {
@@ -143,7 +144,7 @@ const getRentals = catchAsync(async (req, res) => {
     
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
     const result = await rentalService.queryRentals(filter, null, options);
-    res.send(result);
+    res.send(harmonizeResult(result));
 })
 
 const updateRental = catchAsync(async (req, res) => {
@@ -160,7 +161,7 @@ const updateRental = catchAsync(async (req, res) => {
     // TODO: Updating rentals should change the availability of the products
 
     const result = await rentalService.updateRental(filter, rental);
-    res.send(result);
+    res.send(harmonizeResult(result));
 })
 
 const deleteRental = catchAsync(async (req, res) => {
@@ -171,7 +172,7 @@ const deleteRental = catchAsync(async (req, res) => {
     }
 
     const result = await rentalService.deleteRental(filter);
-    res.send(result);
+    res.send(harmonizeResult(result));
 })
 
 module.exports = {

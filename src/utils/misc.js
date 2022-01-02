@@ -1,3 +1,5 @@
+const { format } = require('date-format-parse')
+
 const applyDiscounts = (price, discounts) => {
     console.log('Received:', discounts)
     for (const discount of discounts) {
@@ -30,7 +32,42 @@ const replaceDelete = (obj) => {
     return obj;
 }
 
+const harmonizeRecursive = (result) => {
+    if (Array.isArray(result)) {
+        for (let i = 0; i < result.length; i++) {
+            result[i] = harmonizeRecursive(result[i]);
+        }
+    } else if (typeof result === 'object' && result != null) {
+        for (const key of Object.keys(result)) {
+            if (key === 'price') {
+                result[key] = result[key].$numberDecimal;
+            } else if (key === 'from' || key === 'to' || key === 'date') {
+                result[key] = format(new Date(result[key]), 'YYYY-MM-DD');
+            }
+            else if (key === '_id') {
+                result.id = result[key];
+                delete result[key];
+            }
+            else if (key === '__v' || key === 'createdAt' || key === 'updatedAt') {
+                delete result[key];
+            }
+            else {
+                result[key] = harmonizeRecursive(result[key]);
+            }
+        }
+    }
+
+    return result;
+}
+
+const harmonizeResult = (result) => {
+    result = JSON.parse(JSON.stringify(result));
+    
+    return harmonizeRecursive(result);
+}
+
 module.exports = {
     applyDiscounts,
-    replaceDelete
+    replaceDelete,
+    harmonizeResult
 }

@@ -5,6 +5,7 @@ const { productService } = require('../services');
 const dijkstra = require('dijkstrajs');
 
 const { computeRentabilities } = require('../utils/ranges');
+const { harmonizeResult } = require('../utils/misc');
 
 const pick = require('../utils/pick');
 
@@ -21,7 +22,7 @@ const getProducts = catchAsync(async (req, res) => {
 
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   const result = await productService.queryProducts(filter, null, options);
-  res.send(result);
+  res.send(harmonizeResult(result));
 });
 
 const getProduct = catchAsync(async (req, res) => {
@@ -36,7 +37,7 @@ const getProduct = catchAsync(async (req, res) => {
 
   result = result._doc;
 
-  res.send(result);
+  res.send(harmonizeResult(result));
 });
 
 const getProductInstances = catchAsync(async (req, res) => {
@@ -53,7 +54,7 @@ const getProductInstances = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
   }
 
-  res.send(result._doc.instances);
+  res.send(harmonizeResult(result._doc.instances));
 });
 
 const getProductInstance = catchAsync(async (req, res) => {
@@ -76,7 +77,7 @@ const getProductInstance = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, 'Instance id not found');
   }
 
-  res.send(result._doc.instances[req.params.instanceId]);
+  res.send(harmonizeResult(result._doc.instances[req.params.instanceId]));
 });
 
 const getRentability = catchAsync(async (req, res) => {
@@ -96,7 +97,7 @@ const getRentability = catchAsync(async (req, res) => {
   const instances = result.toObject().instances;
 
   const rentabilities = await computeRentabilities(instances);
-  res.send(rentabilities);
+  res.send(harmonizeResult(rentabilities));
 });
 
 
@@ -438,10 +439,10 @@ const getQuote = catchAsync(async (req, res) => {
 
   const bestOffer = findBestOffer(instances, exchangeCost, req.query.from, req.query.to);
 
-  res.send({
+  res.send(harmonizeResult({
     instances: bestOffer,
     discounts: result.toObject().discounts || []
-  });
+  }));
 });
 
 const addProduct = catchAsync(async (req, res) => {
@@ -454,7 +455,7 @@ const addProduct = catchAsync(async (req, res) => {
   }
 
   const product = await productService.createProduct(req.body);
-  res.status(httpStatus.CREATED).send(product);
+  res.status(httpStatus.CREATED).send(harmonizeResult(product));
 });
 
 const updateProduct = catchAsync(async (req, res) => {
@@ -462,7 +463,7 @@ const updateProduct = catchAsync(async (req, res) => {
     _id: req.params.classId,
   };
   const product = await productService.updateProduct(filter, req.body);
-  res.send(product);
+  res.send(harmonizeResult(product));
 });
 
 const deleteProduct = catchAsync(async (req, res) => {
@@ -470,7 +471,7 @@ const deleteProduct = catchAsync(async (req, res) => {
     _id: req.params.classId,
   };
   const product = await productService.deleteProduct(filter);
-  res.status(httpStatus.OK).send(product);
+  res.status(httpStatus.OK).send(harmonizeResult(product));
 });
 
 module.exports = {
