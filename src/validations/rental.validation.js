@@ -10,7 +10,8 @@ const addRental = {
                         dateRanges: Joi.array().items(Joi.object().keys({
                             from: Joi.date().required().format('YYYY-MM-DD').utc().required(),
                             to: Joi.date().required().format('YYYY-MM-DD').utc().required(),
-                            discounts: discounts(true).default([])
+                            discounts: discounts(true).default([]),
+                            price: Joi.number()
                         }).required()),
                         discounts: discounts(true).default([])
                     })
@@ -50,7 +51,8 @@ const updateRental = {
                         dateRanges: Joi.array().items(Joi.object().keys({
                             from: Joi.date().required().format('YYYY-MM-DD').utc(),
                             to: Joi.date().required().format('YYYY-MM-DD').utc(),
-                            discounts: discounts(false)
+                            discounts: discounts(false),
+                            price: Joi.number()
                         })),
                         discounts: discounts(false)
                     })
