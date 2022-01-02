@@ -114,7 +114,7 @@ const updateProduct = {
     name: Joi.string(),
     description: Joi.string(),
     stars: Joi.number(),
-    coverImage: Joi.string(),
+    coverImage: Joi.string().allow(''),
     otherImages: Joi.array().items(Joi.string()),
     instances: Joi.object().pattern(Joi.string(), instance(false).allow('$delete')),
     discounts: discounts(false)
