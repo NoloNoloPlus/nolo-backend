@@ -14,7 +14,8 @@ const streetSchema = mongoose.Schema(
       type: String,
       required: false,
     }
-  }
+  },
+  {_id: false}
 )
 
 const addressSchema = mongoose.Schema(
@@ -39,7 +40,8 @@ const addressSchema = mongoose.Schema(
       type: String,
       required: false,
     }
-  }
+  },
+  {_id: false}
 )
 
 const userSchema = mongoose.Schema(
