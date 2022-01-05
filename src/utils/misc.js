@@ -66,8 +66,52 @@ const harmonizeResult = (result) => {
     return harmonizeRecursive(result);
 }
 
+const mapToObject = (map) => {
+    /*return Array.from(map).reduce((obj, [key, value]) => (
+        Object.assign(obj, { [key]: value }) // Be careful! Maps can have non-String keys; object literals can't.
+    ), {});*/
+    const obj = {};
+    for (const key of map.keys()) {
+        console.log('Key:', key);
+        obj[key] = map.get(key);
+    }
+
+    return obj;
+}
+
+const mapToObjectRec = (obj) => {
+    if (obj === null || obj === undefined) {
+        return obj;
+    }
+
+    if (obj.toObject) {
+        return mapToObjectRec(obj.toObject());
+    }
+
+    if (obj instanceof Map) {
+        obj = mapToObject(obj);
+
+        for (const key of Object.keys(JSON.parse(JSON.stringify(obj)))) {
+            obj[key] = mapToObjectRec(obj[key]);
+        }
+    }
+    else if (Array.isArray(obj)) {
+        for (let i = 0; i < obj.length; i++) {
+            obj[i] = mapToObjectRec(obj[i]);
+        }
+    }
+    else if (typeof obj === 'object' && obj != null) {
+        for (const key of Object.keys(obj)) {
+            obj[key] = mapToObjectRec(obj[key]);
+        }
+    }
+
+    return obj;
+}
+
 module.exports = {
     applyDiscounts,
+    mapToObjectRec,
     replaceDelete,
     harmonizeResult
 }

@@ -5,17 +5,22 @@ const ApiError = require('../utils/ApiError');
 
 const rentalService = require('../services/rental.service');
 
+const { mapToObjectRec } = require('../utils/misc');
+
+let MAX_DATE = new Date(8640000000000000 - 10);
+let MIN_DATE = new Date(-8640000000000000 + 10);
+
 const mergeDateRanges = (dateRanges) => {
     let ranges = [];
 
-    // Convert [22...24] into [21...25]
+    // Convert [22...24] into [22...25]
     for (const [from, to] of dateRanges) {
-        const newFrom = new Date(from)
-        newFrom.setDate(newFrom.getDate() - 1)
+        //const newFrom = new Date(from)
+        //newFrom.setDate(newFrom.getDate() - 1)
         const newTo = new Date(to)
         newTo.setDate(newTo.getDate() + 1)
 
-        ranges.push([newFrom, newTo])
+        ranges.push([from, newTo])
     }
 
     // Merge the ranges
@@ -23,14 +28,14 @@ const mergeDateRanges = (dateRanges) => {
 
     const finalRanges = [];
 
-    // Reconvert [21...25] into [22...24]
+    // Reconvert [22...25] into [22...24]
     for (const [newFrom, newTo] of ranges) {
-        const finalFrom = new Date(newFrom)
-        finalFrom.setDate(finalFrom.getDate() + 1)
+        //const finalFrom = new Date(newFrom)
+        // finalFrom.setDate(finalFrom.getDate() + 1)
         const finalTo = new Date(newTo)
         finalTo.setDate(finalTo.getDate() - 1)
 
-        finalRanges.push([finalFrom, finalTo])
+        finalRanges.push([newFrom, finalTo])
     }
 
     return finalRanges
@@ -174,15 +179,27 @@ const getNewRanges = (oldRanges, removedRanges) => {
         for (const removedRange of removedRanges) {
             const subRangesAfterRemoval = removeRange([oldRange.from, oldRange.to], [removedRange.from, removedRange.to]);
 
-            newSubRanges = newSubRanges.concat(subRangesAfterRemoval);
+            newSubRanges.push(subRangesAfterRemoval);
         }
+
+        // Surrounding subranges with some extrema prevents unexpected behaviour from edgeIntersection
+        newSubRanges = newSubRanges.map(subRange => [[MIN_DATE, MIN_DATE], ...subRange, [MAX_DATE, MAX_DATE]])
 
         console.log('Found subranges: ', newSubRanges);
 
-        const subRangeIntersection = edgeIntersection(newSubRanges);
+        const concatenatedSubRanges = [].concat(...newSubRanges);
+
+        // I subrange non fanno merged, vanno intersecati
+
+        let subRangeIntersection = edgeIntersection(concatenatedSubRanges);
+        console.log('Intersection: ', subRangeIntersection);
+
+        // Remove the surrounding extrema
+        subRangeIntersection = subRangeIntersection.slice(1, subRangeIntersection.length - 1)
+        console.log('Cleaned up intersection: ', subRangeIntersection);
 
         for (const subRange of subRangeIntersection) {
-            console.log('MergedSubRange: ', subRange)
+            console.log('Subrange intersection: ', subRange)
             const newRange = {...oldRange};
             newRange.from = subRange[0];
             newRange.to = subRange[1];
@@ -194,46 +211,49 @@ const getNewRanges = (oldRanges, removedRanges) => {
 }
 
 const computeRentability = (productId, instanceId, instance, rentals) => {
-    if (instance.availability.toObject) {
-        instance.availability = instance.availability.toObject();
-    }
-
-    const mapToObject = (map) => {
-        return Array.from(map).reduce((obj, [key, value]) => (
-            Object.assign(obj, { [key]: value }) // Be careful! Maps can have non-String keys; object literals can't.
-          ), {});
-        }          
+    // console.log('Instance received: ', instance);
 
     const removedDateRanges = []
 
     // console.log('=======')
     for (const rental of rentals) {
-        // console.log('Rental: ', rental)
-        const products = mapToObject(rental.products.toObject());
-        // console.log('Products: ', products)
-        // console.log('Rental products: ', Object.keys(products))
-        if (products[productId]) {
-            console.log('Rental:', rental);
-        }
-        if (products[productId] && products[productId].toObject().instances[instanceId]) {
-            removedDateRanges.push(...rental.instances[instanceId].dateRanges);
+        const products = rental.products;
+        console.log('Matching Product:', products[productId])
+        // TODO: Non è detto che il rental abbia quel prodotto?
+        if (rental.products[productId].instances[instanceId]) {
+            removedDateRanges.push(...rental.products[productId].instances[instanceId].dateRanges);
         }
     }
     // console.log('===========')
 
-    // console.log('Removed date ranges: ', removedDateRanges);
+    console.log('Removed date ranges: ', removedDateRanges);
     // console.log('Availability: ', instance.availability);
 
     const newRanges =  getNewRanges(instance.availability, removedDateRanges);
-    //console.log('New ranges: ', newRanges);
+    console.log('New ranges: ', newRanges);
     return newRanges;
 }
 
 const computeRentabilities = async (productId, instances) => {
     const rentabilities = {};
   
-    const rentals = (await rentalService.queryRentals()).results;
-    // console.log('Rentals:', rentals);
+    let rentals = mapToObjectRec(await rentalService.queryRentals()).results;
+
+    /*for (const rental of rentals) {
+        console.log('Rental:' , rental);
+        rental.products = mapToObject(rental.products);
+
+        console.log('Rental products:', rental.products)
+
+        for (const rentalProduct of Object.values(rental.products)) {
+            rentalProduct.instances = mapToObject(rentalProduct.toObject().instances);
+            console.log('Rental product instances: ', rentalProduct.instances);
+        }
+        //console.log('Converted products:', mapToObject(rental.products.toObject()))
+        console.log('New products: ', rental.products)
+    }*/
+
+    console.log('Rentals:', rentals);
   
     for (const [instanceId, instance] of Object.entries(instances)) {
         // console.log('Instance:', instance);
@@ -284,6 +304,7 @@ const validRentedRanges = (availability, rentedRanges, productId, instanceId, ty
 
 module.exports = {
     computeRentabilities,
+    computeRentability,
     getNewRanges,
     validRentedRanges
 }

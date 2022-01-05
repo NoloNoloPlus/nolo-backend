@@ -6,14 +6,10 @@ const { productService, rentalService } = require('../services');
 const verifyRights = require('../utils/verifyRights');
 const Decimal = require('decimal.js');
 
-const { validRentedRanges, computeRentabilities } = require('../utils/ranges');
-const { harmonizeResult } = require('../utils/misc');
+const { validRentedRanges, computeRentability } = require('../utils/ranges');
+const { harmonizeResult, mapToObjectRec } = require('../utils/misc');
 
 const pick = require('../utils/pick');
-
-
-
-
 
 const computeDateRangePrice = (dateRange, availability) => {
     let totalPrice = new Decimal(0);
@@ -77,31 +73,35 @@ const addRental = catchAsync(async (req, res) => {
 
     console.log(req.body);
 
-    for (const [productId, productRental] of Object.entries(rental.products)) {
-        const currentProduct = (await productService.queryProduct({ _id: productId }));
+    const currentRentals = mapToObjectRec((await rentalService.queryRentals()).results);
 
-        if (!currentProduct) {
+    console.log('Current rentals: ', currentRentals);
+
+    for (const [productId, productRental] of Object.entries(rental.products)) {
+        const currentProductResult = await productService.queryProduct({ _id: productId })
+        if (!currentProductResult) {
             throw new ApiError(httpStatus.BAD_REQUEST, `Product ${productId} not found.`)
         }
 
-        const currentProductData = currentProduct.toObject();
-        /*console.log('Current product: ', currentProductData)
-        console.log('Current instances: ', currentProductData.instances)*/
+        const currentProduct = mapToObjectRec(currentProductResult);
+
+        /*console.log('Current product: ', currentProduct)
+        console.log('Current instances: ', currentProduct.instances)*/
 
         for (const [instanceId, instanceRental] of Object.entries(productRental.instances)) {
-            if (!currentProductData.instances.get(instanceId)) {
+            if (!currentProduct.instances[instanceId]) {
                 throw new ApiError(httpStatus.BAD_REQUEST, `Instance ${instanceId} for product ${productId} not found.`)
             }
 
-            const currentInstanceAvailability = currentProductData.instances.get(instanceId).toObject().availability;
+            const currentInstance = currentProduct.instances[instanceId];
 
             /*console.log('instanceId: ', instanceId)
             console.log('instanceRental: ', instanceRental);
             console.log('Product instances: ', currentProduct.instances)*/
-            console.log('Current instance availability: ', currentInstanceAvailability)
-            validRentedRanges(currentInstanceAvailability, instanceRental.dateRanges, productId, instanceId, 'available')
+            console.log('Current instance availability: ', currentInstance.availability)
+            validRentedRanges(currentInstance.availability, instanceRental.dateRanges, productId, instanceId, 'available')
 
-            const rentability = (await computeRentabilities(productId, { [instanceId]: { availability: currentInstanceAvailability }}, instanceRental.dateRanges))[instanceId];
+            const rentability = await computeRentability(productId, instanceId, currentProduct.instances[instanceId], currentRentals);
 
             console.log('Rentability:', rentability)
 
@@ -110,7 +110,7 @@ const addRental = catchAsync(async (req, res) => {
 
             for (let i = 0; i < instanceRental.dateRanges.length; i++) {
                 let matchingDateRange = null;
-                for (const currentDateRange of currentInstanceAvailability) {
+                for (const currentDateRange of currentInstance.availability) {
                     if (instanceRental.dateRanges[i].from >= currentDateRange.from && instanceRental.dateRanges[i].to <= currentDateRange.to) {
                         if (matchingDateRange) {
                             throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Date range ${instanceRental.dateRanges[i].from} - ${instanceRental.dateRanges[i].to} has multiple matching instance dateRanges.`);
