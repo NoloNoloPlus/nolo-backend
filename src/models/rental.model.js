@@ -41,11 +41,15 @@ const rentedProductSchema = mongoose.Schema({
 
 const rentalSchema = mongoose.Schema({
     products: {type: Map, of: rentedProductSchema},
-    user: {type: String},
+    userId: {type: String},
     approvedBy: {type: String},
     discounts: {
         type: [discountSchema],
         default: []
+    },
+    closed: {
+        type: Boolean,
+        default: false
     }
 },
 {
