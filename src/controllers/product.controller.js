@@ -233,8 +233,6 @@ const createGraph = (instances, exchangeCost, startDay, endDay) => {
 }
 
 const prepareData = (instances, startDay, endDay) => {
-  instances = Object.fromEntries(instances);
-
   function toDays(date) {
     const millisecondsToDays = 1000 * 60 * 60 * 24;
     return Math.round(new Date(date).getTime() / millisecondsToDays);
@@ -264,16 +262,15 @@ const prepareData = (instances, startDay, endDay) => {
 
   const newInstances = {};
   for (const [instanceId, instance] of Object.entries(instances)) {
-    console.log('Instance AAAAAAAAAAAAAAA:', instance.toObject())
-    const newInstance = instance.toObject();
+    const newInstance = {...instance};
     
     newInstance.availability = [];
 
-    // instance.availability = instance.availability.toObject();
+    // instance.availability = instance.availability;
 
     // TODO: è il caso di ordinare le dateRanges?
 
-    for (const dateRange of instance.availability.toObject()) {
+    for (const dateRange of instance.availability) {
       // TODO: Bisogna convertire le date in Date?
       const newDateRange = {...dateRange};
 
@@ -442,16 +439,26 @@ const getQuote = catchAsync(async (req, res) => {
     _id: 0,
     instances: 1,
   };
-  const result = await productService.queryProduct(filter, projection);
+  const result = mapToObjectRec(await productService.queryProduct(filter, projection));
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
   }
 
   // TODO: Controllo che il from sia prima del to
-  const { instances } = result.toObject();
+  const { instances } = result;
 
-  const rentabilities = await computeRentabilities(req.params.classId, instances);
+  // If there's an instances override, use it
+  if (req.query.instances) {
+    const instancesOverride = req.query.instances.split(',');
+    for (const [instanceId, instance] of Object.entries(instances)) {
+      if (!instancesOverride.includes(instanceId)) {
+        delete instances[instanceId];
+      }
+    }
+  }
+
+  const rentabilities = await computeRentabilities(req.params.classId, instances, req.query.ignoreRental);
 
   for (const [instanceId, rentability] of Object.entries(rentabilities)) {
     instances[instanceId].availability = rentability;
@@ -459,13 +466,13 @@ const getQuote = catchAsync(async (req, res) => {
 
   console.log('Query', req.query);
 
-  const exchangeCost = 2000; // TODO: Poi sistemare
+  const exchangeCost = req.query.exchangeCost;
 
   const bestOffer = findBestOffer(instances, exchangeCost, req.query.from, req.query.to);
 
   res.send(harmonizeResult({
     instances: bestOffer,
-    discounts: result.toObject().discounts || []
+    discounts: result.discounts || []
   }));
 });
 
