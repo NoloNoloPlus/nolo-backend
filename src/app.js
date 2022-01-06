@@ -19,6 +19,14 @@ const fileUpload = require('express-fileupload');
 
 const app = express();
 
+// Enable CORS
+app.use((req, res, next) => {
+  res.append('Access-Control-Allow-Origin', ['*']);
+  res.append('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
+  res.append('Access-Control-Allow-Headers', 'Content-Type');
+  next();
+});
+
 app.enable('strict routing');
 
 if (config.env !== 'test') {
@@ -43,8 +51,7 @@ app.use(mongoSanitize());
 // gzip compression
 app.use(compression());
 
-// enable cors
-app.use(cors());
+
 app.options('*', cors());
 
 // jwt authentication
