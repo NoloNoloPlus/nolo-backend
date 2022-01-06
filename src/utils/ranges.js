@@ -182,32 +182,52 @@ const getNewRanges = (oldRanges, removedRanges) => {
             newSubRanges.push(subRangesAfterRemoval);
         }
 
-        // Surrounding subranges with some extrema prevents unexpected behaviour from edgeIntersection
-        newSubRanges = newSubRanges.map(subRange => [[MIN_DATE, MIN_DATE], ...subRange, [MAX_DATE, MAX_DATE]])
+        if (newSubRanges.length > 1) {
 
-        console.log('Found subranges: ', newSubRanges);
+            // Surrounding subranges with some extrema prevents unexpected behaviour from edgeIntersection
+            newSubRanges = newSubRanges.map(subRange => [[MIN_DATE, MIN_DATE], ...subRange, [MAX_DATE, MAX_DATE]])
 
-        const concatenatedSubRanges = [].concat(...newSubRanges);
+            console.log('Found subranges: ', newSubRanges);
 
-        // I subrange non fanno merged, vanno intersecati
+            const concatenatedSubRanges = [].concat(...newSubRanges);
 
-        let subRangeIntersection = edgeIntersection(concatenatedSubRanges);
-        console.log('Intersection: ', subRangeIntersection);
+            // I subrange non fanno merged, vanno intersecati
 
-        // Remove the surrounding extrema
-        subRangeIntersection = subRangeIntersection.slice(1, subRangeIntersection.length - 1)
-        console.log('Cleaned up intersection: ', subRangeIntersection);
+            let subRangeIntersection = edgeIntersection(concatenatedSubRanges);
+            console.log('Intersection: ', subRangeIntersection);
 
-        for (const subRange of subRangeIntersection) {
-            console.log('Subrange intersection: ', subRange)
-            const newRange = {...oldRange};
-            newRange.from = subRange[0];
-            newRange.to = subRange[1];
-            newRanges.push(newRange);
+            // Remove the surrounding extrema
+            subRangeIntersection = subRangeIntersection.slice(1, subRangeIntersection.length - 1)
+            console.log('Cleaned up intersection: ', subRangeIntersection);
+
+            for (const subRange of subRangeIntersection) {
+                console.log('Subrange intersection: ', subRange)
+                const newRange = {...oldRange};
+                newRange.from = subRange[0];
+                newRange.to = subRange[1];
+                newRanges.push(newRange);
+            }
+
+            return newRanges;
+        } else if (newSubRanges.length == 1) {
+            console.log('New sub ranges: ', newSubRanges);
+
+            const newRanges = [];
+            for (const subRange of newSubRanges[0]) {
+                newRanges.push(
+                    {
+                        ...oldRange,
+                        from: subRange[0],
+                        to: subRange[1]
+                    }
+                );
+            }
+            return newRanges;
+        } else {
+            return [];
         }
     }
 
-    return newRanges;
 }
 
 const computeRentability = (productId, instanceId, instance, rentals) => {
@@ -220,7 +240,7 @@ const computeRentability = (productId, instanceId, instance, rentals) => {
         const products = rental.products;
         console.log('Matching Product:', products[productId])
         // TODO: Non è detto che il rental abbia quel prodotto?
-        if (rental.products[productId].instances[instanceId]) {
+        if (rental.products[productId]?.instances[instanceId]) {
             removedDateRanges.push(...rental.products[productId].instances[instanceId].dateRanges);
         }
     }
@@ -234,10 +254,18 @@ const computeRentability = (productId, instanceId, instance, rentals) => {
     return newRanges;
 }
 
-const computeRentabilities = async (productId, instances) => {
+const computeRentabilities = async (productId, instances, ignoreRental) => {
     const rentabilities = {};
   
     let rentals = mapToObjectRec(await rentalService.queryRentals()).results;
+
+    if (ignoreRental) {
+        // Note the use of _id instead of id, since we're using the object as returned
+        // by the rental service
+        rentals = rentals.filter(rental => rental._id != ignoreRental)
+    }
+
+    console.log('Remaining rentals: ', rentals);
 
     /*for (const rental of rentals) {
         console.log('Rental:' , rental);
@@ -259,8 +287,6 @@ const computeRentabilities = async (productId, instances) => {
         // console.log('Instance:', instance);
         rentabilities[instanceId] = computeRentability(productId, instanceId, instance, rentals);
     }
-
-    // console.log('Rentabilities: ', rentabilities);
   
     return rentabilities;
 }
