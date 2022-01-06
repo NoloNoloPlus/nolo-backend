@@ -254,18 +254,21 @@ const computeRentability = (productId, instanceId, instance, rentals) => {
     return newRanges;
 }
 
-const computeRentabilities = async (productId, instances, ignoreRental) => {
+const computeRentabilities = async (productId, instances, ignoreAllRentals, ignoreRental) => {
     const rentabilities = {};
   
-    let rentals = mapToObjectRec(await rentalService.queryRentals()).results;
+    let rentals;
+    if (ignoreAllRentals) {
+        rentals = [];
+    } else {
+        rentals = mapToObjectRec(await rentalService.queryRentals()).results;
 
-    if (ignoreRental) {
-        // Note the use of _id instead of id, since we're using the object as returned
-        // by the rental service
-        rentals = rentals.filter(rental => rental._id != ignoreRental)
+        if (ignoreRental) {
+            // Note the use of _id instead of id, since we're using the object as returned
+            // by the rental service
+            rentals = rentals.filter(rental => rental._id != ignoreRental)
+        }
     }
-
-    console.log('Remaining rentals: ', rentals);
 
     /*for (const rental of rentals) {
         console.log('Rental:' , rental);
