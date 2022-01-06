@@ -94,10 +94,13 @@ const mapToObjectRec = (obj) => {
 
     if (obj instanceof Map) {
         obj = mapToObject(obj);
+        const newObj = {};
 
         for (const key of Object.keys(JSON.parse(JSON.stringify(obj)))) {
-            obj[key] = mapToObjectRec(obj[key]);
+            newObj[key] = mapToObjectRec(obj[key]);
         }
+
+        return newObj;
     }
     else if (Array.isArray(obj)) {
         for (let i = 0; i < obj.length; i++) {
