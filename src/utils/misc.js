@@ -61,6 +61,10 @@ const harmonizeRecursive = (result) => {
 }
 
 const harmonizeResult = (result) => {
+    if (result === undefined) {
+        return undefined;
+    }
+
     result = JSON.parse(JSON.stringify(result));
     
     return harmonizeRecursive(result);

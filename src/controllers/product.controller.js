@@ -5,7 +5,7 @@ const { productService } = require('../services');
 const dijkstra = require('dijkstrajs');
 
 const { computeRentabilities } = require('../utils/ranges');
-const { harmonizeResult } = require('../utils/misc');
+const { harmonizeResult, mapToObjectRec } = require('../utils/misc');
 
 const pick = require('../utils/pick');
 
@@ -20,9 +20,30 @@ const getProducts = catchAsync(async (req, res) => {
     };
   }*/
 
+  if (req.query.name && req.query.keywords) {
+    throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot use both "name" and "keywords" parameters.');
+  }
+
+  const keywords = req.query.keywords?.split(' ');
+
+  if (keywords) {
+    delete req.query.keywords;
+  }
+
   const options = pick(req.query, ['sortBy', 'limit', 'page']);
   const result = await productService.queryProducts(filter, null, options);
-  res.send(harmonizeResult(result));
+
+  const harmonized = harmonizeResult(result);
+
+  const allMatch = (product) => {
+    return keywords?.every((keyword) => product.name.toLowerCase().includes(keyword.toLowerCase()));
+  }
+
+  if (keywords) {
+    harmonized.results = harmonized.results.filter(product => allMatch(product));
+  }
+
+  res.send(harmonized);
 });
 
 const getProduct = catchAsync(async (req, res) => {
@@ -88,15 +109,15 @@ const getRentability = catchAsync(async (req, res) => {
     _id: 0,
     instances: 1,
   };
-  const result = await productService.queryProduct(filter, projection);
+  const result = mapToObjectRec(await productService.queryProduct(filter, projection));
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
   }
 
-  const instances = result.toObject().instances;
+  const instances = result.instances;
 
-  const rentabilities = await computeRentabilities(instances);
+  const rentabilities = await computeRentabilities(req.params.classId, instances);
   res.send(harmonizeResult(rentabilities));
 });
 
@@ -265,6 +286,8 @@ const prepareData = (instances, startDay, endDay) => {
       console.log('Original date range:', dateRange);
       console.log('New date range:', newDateRange);
 
+      // TODO: Usa prezzo scontato/segnalo
+
       newInstance.availability.push(newDateRange);
     }
 
@@ -370,6 +393,7 @@ const parseShortestPath = (path, instances, firstDay) => {
       delete parsedDateRange.nodes;
 
       if (!parsedInstances[instanceId]) {
+        // TODO: Non deve restituire logs e current status
         parsedInstances[instanceId] = {...instances[instanceId]};
         delete parsedInstances[instanceId].availability;
         parsedInstances[instanceId].dateRanges = [];
