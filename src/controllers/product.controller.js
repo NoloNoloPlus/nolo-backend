@@ -448,17 +448,11 @@ const getQuote = catchAsync(async (req, res) => {
   // TODO: Controllo che il from sia prima del to
   const { instances } = result;
 
-  // If there's an instances override, use it
-  if (req.query.instances) {
-    const instancesOverride = req.query.instances.split(',');
-    for (const [instanceId, instance] of Object.entries(instances)) {
-      if (!instancesOverride.includes(instanceId)) {
-        delete instances[instanceId];
-      }
-    }
+  if (req.query.ignoreAllRentals && req.query.ignoreRental) {
+    throw new ApiError(httpStatus.BAD_REQUEST, '"ignoreAllRentals" and "ignoreRental" are mutually exclusive');
   }
 
-  const rentabilities = await computeRentabilities(req.params.classId, instances, req.query.ignoreRental);
+  const rentabilities = await computeRentabilities(req.params.classId, instances, req.query.ignoreAllRentals, req.query.ignoreRental);
 
   for (const [instanceId, rentability] of Object.entries(rentabilities)) {
     instances[instanceId].availability = rentability;

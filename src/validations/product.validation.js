@@ -33,7 +33,7 @@ const getQuote = {
     from: Joi.date().format('YYYY-MM-DD').utc().required(),
     to: Joi.date().format('YYYY-MM-DD').utc().required(),
     exchangeCost: Joi.number().default(2000),
-    instances: Joi.string().empty('').default(null),
+    ignoreAllRentals: Joi.bool().default(false),
     ignoreRental: Joi.string().empty('').default(null)
   })
 };
