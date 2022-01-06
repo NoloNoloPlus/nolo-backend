@@ -19,7 +19,7 @@ const addRental = {
                 discounts: discounts(true).default([])
             })
             ).required(),
-        closed: Joi.boolean().default(false),
+        status: Joi.string().valid('ready', 'active', 'closed').default('ready'),
         userId: Joi.string(),
         approvedBy: Joi.string(),
         discounts: discounts(true).default([])
@@ -64,7 +64,7 @@ const updateRental = {
         userId: Joi.string(),
         approvedBy: Joi.string(),
         discounts: discounts(false),
-        closed: Joi.boolean()
+        status: Joi.string().valid('ready', 'active', 'closed')
     }),
     params: Joi.object().keys({
         rentalId: Joi.custom(objectId).required()

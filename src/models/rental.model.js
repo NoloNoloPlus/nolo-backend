@@ -47,9 +47,10 @@ const rentalSchema = mongoose.Schema({
         type: [discountSchema],
         default: []
     },
-    closed: {
-        type: Boolean,
-        default: false
+    status: {
+        type: String,
+        enum: ['ready', 'active', 'closed'],
+        default: 'ready'
     }
 },
 {
