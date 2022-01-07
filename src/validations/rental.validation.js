@@ -38,7 +38,7 @@ const getRentals = {
         products: Joi.array().items(Joi.string()),
         sortBy: Joi.string().valid('createdAt', 'updatedAt').default('createdAt'),
         ascending: Joi.bool().default(true),
-        limit: Joi.number().default(20),
+        limit: Joi.number().default(200),
         page: Joi.number().default(1)
     })
 };
