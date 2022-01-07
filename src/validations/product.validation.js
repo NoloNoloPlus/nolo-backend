@@ -7,7 +7,7 @@ const getProducts = {
     stars: Joi.number().default(0),
     sortBy: Joi.string().valid('name', 'description', 'stars', 'updatedAt', 'createdAt').default('name'),
     ascending: Joi.bool().default(true),
-    limit: Joi.number().default(20),
+    limit: Joi.number().default(200),
     page: Joi.number().default(1),
   }),
 };
