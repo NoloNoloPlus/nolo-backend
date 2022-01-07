@@ -154,9 +154,8 @@ const getRental = catchAsync(async (req, res) => {
 })
 
 const getRentals = catchAsync(async (req, res) => {
-    // TODO: Add filters
-    const filter = {
-    };
+    // TODO: Add more filters
+    const filter = pick(req.query, ['userId']);
     
     const options = pick(req.query, ['sortBy', 'limit', 'page']);
     const result = await rentalService.queryRentals(filter, null, options);
