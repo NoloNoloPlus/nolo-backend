@@ -23,8 +23,8 @@ const paymentPreferences = Joi.array().items(Joi.string().valid(
 
 const user = (creation, additionalFields) => {
   const streetSchema = {
-    line1: Joi.string(),
-    line2: Joi.string()
+    line1: Joi.string().allow(''),
+    line2: Joi.string().allow('')
   }
 
   if (creation) {
@@ -34,10 +34,10 @@ const user = (creation, additionalFields) => {
 
   const addressSchema = {
     street: Joi.object().keys(streetSchema),
-    city: Joi.string(),
-    state: Joi.string(),
-    zip: Joi.string(),
-    country: Joi.string()
+    city: Joi.string().allow(''),
+    state: Joi.string().allow(''),
+    zip: Joi.string().allow(''),
+    country: Joi.string().allow('')
   }
 
   if (creation) {
@@ -56,9 +56,9 @@ const user = (creation, additionalFields) => {
     lastName: Joi.string(),
     email: Joi.string().email(),
     password: Joi.string().custom(password),
-    company: Joi.string(),
+    company: Joi.string().allow(''),
     address: Joi.object().keys(addressSchema),
-    avatarUrl: Joi.string(),
+    avatarUrl: Joi.string().allow(''),
     paymentPreferences
   };
 
