@@ -51,6 +51,10 @@ const rentalSchema = mongoose.Schema({
         type: String,
         enum: ['ready', 'active', 'closed'],
         default: 'ready'
+    },
+    penalty: {
+        type: Number,
+        default: 0
     }
 },
 {

@@ -13,11 +13,12 @@ const pick = require('../utils/pick');
 
 const verifyRentalRights = (user, rental, allowEmptyDiscounts) => {
     if (!verifyRights(user, ['manageRentals'])) {
-        if (rental.userId) {
-            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "userId" requires "manageRentals" capability.')
-        }
-        if (rental.approvedBy) {
-            throw new ApiError(httpStatus.UNAUTHORIZED, 'Parameter "approvedBy" requires "manageRentals" capability.')
+        const manageRentalsParameters = ['userId', 'approvedBy', 'status', 'penalty'];
+
+        for (const parameter of manageRentalsParameters) {
+            if (rental[parameter]) {
+                throw new ApiError(httpStatus.FORBIDDEN, `Parameter "${parameter}" requires "manageRentals" capability.`)
+            }
         }
 
         const checkDiscounts = (discounts) => {
