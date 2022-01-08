@@ -179,11 +179,48 @@ const deleteRental = catchAsync(async (req, res) => {
     res.send(harmonizeResult(result));
 })
 
+const closeRental = catchAsync(async (req, res) => {
+    const { rentalId } = req.params;
+    const { penaltyValue, penaltyMessage } = req.query;
+
+    const filter = {
+        _id: rentalId
+    }
+
+    if ((penaltyValue && !penaltyMessage) || (!penaltyValue && penaltyMessage)) {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Cannot use one of [penaltyValue, penaltyMessage] without the other one.');
+    }
+
+    const rental = mapToObjectRec(await rentalService.queryRental(filter));
+
+    if (!rental) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Rental id not found.');
+    }
+
+    if (rental.status == 'closed') {
+        throw new ApiError(httpStatus.BAD_REQUEST, 'Rental is already closed.');
+    }
+
+    if (penaltyValue) {
+        rental.penalty = {
+            value: penaltyValue,
+            message: penaltyMessage
+        };
+    }
+
+    rental.status = 'closed';
+
+    await rentalService.updateRental(filter, rental);
+    res.send(harmonizeResult(rental));
+})
+
+
 module.exports = {
     addRental,
     getRental,
     getRentals,
     updateRental,
     updateRentalPreprocessed,
-    deleteRental
+    deleteRental,
+    closeRental
 }

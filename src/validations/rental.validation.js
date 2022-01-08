@@ -79,10 +79,21 @@ const deleteRental = {
     })
 }
 
+const closeRental = {
+    params: Joi.object().keys({
+        rentalId: Joi.custom(objectId).required()
+    }),
+    query: Joi.object().keys({
+        penaltyValue: Joi.number(),
+        penaltyMessage: Joi.string()
+    })
+}
+
 module.exports = {
     addRental,
     getRental,
     getRentals,
     updateRental,
-    deleteRental
+    deleteRental,
+    closeRental
 }

@@ -39,6 +39,11 @@ const rentedProductSchema = mongoose.Schema({
     }
 }, {_id: false})
 
+const penaltySchema = mongoose.Schema({
+    value: {type: Number},
+    message: {type: String}
+}, {_id: false})
+
 const rentalSchema = mongoose.Schema({
     products: {type: Map, of: rentedProductSchema},
     userId: {type: String},
@@ -53,8 +58,8 @@ const rentalSchema = mongoose.Schema({
         default: 'ready'
     },
     penalty: {
-        type: Number,
-        default: 0
+        type: penaltySchema,
+        required: false
     }
 },
 {

@@ -17,4 +17,8 @@ router.route('/:rentalId/')
 
 router.route('/:rentalId/preprocessed')
     .post(auth('basic'), validate(rentalValidation.updateRental), rentalController.updateRentalPreprocessed)
+
+router.route('/:rentalId/close')
+    .post(auth('basic'), validate(rentalValidation.closeRental), rentalController.closeRental)
+
 module.exports = router;
