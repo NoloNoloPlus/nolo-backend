@@ -117,7 +117,9 @@ const getRentability = catchAsync(async (req, res) => {
 
   const instances = result.instances;
 
-  const rentabilities = await computeRentabilities(req.params.classId, instances);
+  const { ignoreRental } = req.query;
+
+  const rentabilities = await computeRentabilities(req.params.classId, instances, false, ignoreRental);
   res.send(harmonizeResult(rentabilities));
 });
 

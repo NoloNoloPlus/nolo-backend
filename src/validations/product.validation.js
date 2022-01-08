@@ -133,10 +133,20 @@ const deleteProduct = {
   })
 }
 
+const getRentability = {
+  params: Joi.object().keys({
+    classId: Joi.custom(objectId).required(),
+  }),
+  query: Joi.object().keys({
+    ignoreRental: Joi.string().empty('').default(null),
+  })
+}
+
 module.exports = {
   getProducts,
   getProduct,
   getProductInstance,
+  getRentability,
   getQuote,
   addProduct,
   updateProduct,

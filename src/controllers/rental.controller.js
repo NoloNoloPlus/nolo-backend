@@ -11,26 +11,6 @@ const { harmonizeResult, mapToObjectRec } = require('../utils/misc');
 
 const pick = require('../utils/pick');
 
-const computeDateRangePrice = (dateRange, availability) => {
-    let totalPrice = new Decimal(0);
-    const prices = {};
-
-    for (let availabilityRange of availability) {
-        for (let availabilityDay = new Date(availabilityRange.from); availabilityDay <= availabilityRange.to; availabilityDay.setDate(availabilityDay.getDate() + 1)) {
-            console.log('Price: ', availabilityRange.price.toString())
-            prices[availabilityDay] = new Decimal(availabilityRange.price.toString());
-        }
-    }
-
-    console.log('DateRange:', dateRange)
-
-    for (let currentDay = new Date(dateRange.from); currentDay <= dateRange.to; currentDay.setDate(currentDay.getDate() + 1)) {
-        totalPrice = Decimal.sum(totalPrice, prices[currentDay]);
-    }
-
-    return totalPrice;
-}
-
 const verifyRentalRights = (user, rental, allowEmptyDiscounts) => {
     if (!verifyRights(user, ['manageRentals'])) {
         if (rental.userId) {
@@ -66,16 +46,12 @@ const verifyRentalRights = (user, rental, allowEmptyDiscounts) => {
     }
 }
 
-const addRental = catchAsync(async (req, res) => {
-    const rental = req.body;
+const preprocessRental = async (req, rental, ignoreRental) => {
+    let currentRentals = mapToObjectRec((await rentalService.queryRentals()).results);
 
-    verifyRentalRights(req.user, rental, true);
-
-    console.log(req.body);
-
-    const currentRentals = mapToObjectRec((await rentalService.queryRentals()).results);
-
-    console.log('Current rentals: ', currentRentals);
+    if (ignoreRental) {
+        currentRentals = currentRentals.filter(rental => rental._id != ignoreRental);
+    }
 
     for (const [productId, productRental] of Object.entries(rental.products)) {
         const currentProductResult = await productService.queryProduct({ _id: productId })
@@ -85,9 +61,6 @@ const addRental = catchAsync(async (req, res) => {
 
         const currentProduct = mapToObjectRec(currentProductResult);
 
-        /*console.log('Current product: ', currentProduct)
-        console.log('Current instances: ', currentProduct.instances)*/
-
         for (const [instanceId, instanceRental] of Object.entries(productRental.instances)) {
             if (!currentProduct.instances[instanceId]) {
                 throw new ApiError(httpStatus.BAD_REQUEST, `Instance ${instanceId} for product ${productId} not found.`)
@@ -95,17 +68,10 @@ const addRental = catchAsync(async (req, res) => {
 
             const currentInstance = currentProduct.instances[instanceId];
 
-            /*console.log('instanceId: ', instanceId)
-            console.log('instanceRental: ', instanceRental);
-            console.log('Product instances: ', currentProduct.instances)*/
-            console.log('Current instance availability: ', currentInstance.availability)
             validRentedRanges(currentInstance.availability, instanceRental.dateRanges, productId, instanceId, 'available')
 
             const rentability = await computeRentability(productId, instanceId, currentProduct.instances[instanceId], currentRentals);
 
-            console.log('Rentability:', rentability)
-
-            // TODO: Check if the rentability is valid
             validRentedRanges(rentability, instanceRental.dateRanges, productId, instanceId, 'rentable')
 
             for (let i = 0; i < instanceRental.dateRanges.length; i++) {
@@ -132,10 +98,19 @@ const addRental = catchAsync(async (req, res) => {
     rental.userId = req.body.userId || req.user.id;
     rental.approvedBy = req.body.approvedBy || null;
 
-    rentalService.addRental(rental);
+    return rental;
+}
 
-    // TODO: Non contiene price, sistemare harmonization
-    res.status(httpStatus.CREATED).send(harmonizeResult(rental));
+const addRental = catchAsync(async (req, res) => {
+    const rental = req.body;
+
+    verifyRentalRights(req.user, rental, true);
+
+    const preprocessedRental = await preprocessRental(req, rental);
+
+    rentalService.addRental(preprocessedRental);
+
+    res.status(httpStatus.CREATED).send(harmonizeResult(preprocessedRental));
 })
 
 const getRental = catchAsync(async (req, res) => {
@@ -173,9 +148,22 @@ const updateRental = catchAsync(async (req, res) => {
 
     verifyRentalRights(req.user, rental, false);
 
-    // TODO: Updating rentals should change the availability of the products
-
     const result = await rentalService.updateRental(filter, rental);
+    res.send(harmonizeResult(result));
+})
+
+const updateRentalPreprocessed = catchAsync(async (req, res) => {
+    const { rentalId } = req.params;
+
+    const filter = {
+        _id: rentalId
+    }
+
+    const rental = req.body;
+
+    verifyRentalRights(req.user, rental, false);
+
+    const result = await rentalService.updateRental(filter, await preprocessRental(req, rental, rentalId));
     res.send(harmonizeResult(result));
 })
 
@@ -195,5 +183,6 @@ module.exports = {
     getRental,
     getRentals,
     updateRental,
+    updateRentalPreprocessed,
     deleteRental
 }
