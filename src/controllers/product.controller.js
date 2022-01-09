@@ -437,11 +437,7 @@ const getQuote = catchAsync(async (req, res) => {
   const filter = {
     _id: req.params.classId,
   };
-  const projection = {
-    _id: 0,
-    instances: 1,
-  };
-  const result = mapToObjectRec(await productService.queryProduct(filter, projection));
+  const result = mapToObjectRec(await productService.queryProduct(filter));
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
