@@ -79,11 +79,9 @@ const preprocessRental = async (req, rental, ignoreRental) => {
                 let matchingDateRange = null;
                 for (const currentDateRange of currentInstance.availability) {
                     if (instanceRental.dateRanges[i].from >= currentDateRange.from && instanceRental.dateRanges[i].to <= currentDateRange.to) {
-                        if (matchingDateRange) {
-                            throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, `Date range ${instanceRental.dateRanges[i].from} - ${instanceRental.dateRanges[i].to} has multiple matching instance dateRanges.`);
+                        if (!matchingDateRange || currentDateRange.price < matchingDateRange.price) {
+                            matchingDateRange = currentDateRange;
                         }
-                        
-                        matchingDateRange = currentDateRange;
                     }
                 }
 
