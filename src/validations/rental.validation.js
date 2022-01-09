@@ -36,6 +36,7 @@ const getRental = {
 const getRentals = {
     query: Joi.object().keys({
         userId: Joi.string(),
+        approvedBy: Joi.string(),
         products: Joi.array().items(Joi.string()),
         sortBy: Joi.string().valid('createdAt', 'updatedAt').default('createdAt'),
         ascending: Joi.bool().default(true),
