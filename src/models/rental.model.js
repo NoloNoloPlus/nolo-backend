@@ -8,7 +8,7 @@ const discountSchema = mongoose.Schema({
         type: String,
         default: ''
     }
-}, {_id: false})
+}, {_id: false, strict: false});
 
 const dateRangeSchema = mongoose.Schema({
     from: {type: Date},
@@ -21,7 +21,7 @@ const dateRangeSchema = mongoose.Schema({
         type: [discountSchema],
         default: []
     }
-}, {_id: false})
+}, {_id: false, strict: false})
 
 const rentedInstanceSchema = mongoose.Schema({
     dateRanges: {type: [dateRangeSchema]},
@@ -29,7 +29,7 @@ const rentedInstanceSchema = mongoose.Schema({
         type: [discountSchema],
         default: []
     }
-}, {_id: false})
+}, {_id: false, strict: false})
 
 const rentedProductSchema = mongoose.Schema({
     instances: {type: Map, of: rentedInstanceSchema},
@@ -37,17 +37,21 @@ const rentedProductSchema = mongoose.Schema({
         type: [discountSchema],
         default: []
     }
-}, {_id: false})
+}, {_id: false, strict: false})
 
 const penaltySchema = mongoose.Schema({
     value: {type: Number},
     message: {type: String}
-}, {_id: false})
+}, {_id: false, strict: false})
 
 const rentalSchema = mongoose.Schema({
     products: {type: Map, of: rentedProductSchema},
     userId: {type: String},
-    approvedBy: {type: String},
+    approvedBy: {
+        type: String,
+        required: false,
+        default: null
+    },
     discounts: {
         type: [discountSchema],
         default: []
@@ -65,6 +69,7 @@ const rentalSchema = mongoose.Schema({
 {
   timestamps: true,
   collection: 'rentals',
+  strict: false
 });
 
 // add plugin that converts mongoose to json
