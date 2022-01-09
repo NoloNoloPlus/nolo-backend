@@ -164,7 +164,10 @@ const updateRentalPreprocessed = catchAsync(async (req, res) => {
 
     verifyRentalRights(req.user, rental, false);
 
-    const result = await rentalService.updateRental(filter, await preprocessRental(req, rental, rentalId));
+    const preprocessedRental = await preprocessRental(req, rental, rentalId);
+    preprocessedRental.approvedBy = null;
+
+    const result = await rentalService.updateRental(filter, );
     res.send(harmonizeResult(result));
 })
 
