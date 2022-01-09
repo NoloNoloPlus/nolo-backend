@@ -173,6 +173,7 @@ const getNewRanges = (oldRanges, removedRanges) => {
     }
 
     const newRanges = [];
+
     for (const oldRange of oldRanges) {
         console.log('Checking old range ', oldRange);
         let newSubRanges = [];
@@ -207,8 +208,6 @@ const getNewRanges = (oldRanges, removedRanges) => {
                 newRange.to = subRange[1];
                 newRanges.push(newRange);
             }
-
-            return newRanges;
         } else if (newSubRanges.length == 1) {
             console.log('New sub ranges: ', newSubRanges);
 
@@ -222,12 +221,10 @@ const getNewRanges = (oldRanges, removedRanges) => {
                     }
                 );
             }
-            return newRanges;
-        } else {
-            return [];
         }
     }
 
+    return newRanges;
 }
 
 const computeRentability = (productId, instanceId, instance, rentals) => {
@@ -238,15 +235,20 @@ const computeRentability = (productId, instanceId, instance, rentals) => {
     // console.log('=======')
     for (const rental of rentals) {
         const products = rental.products;
+        console.log('Rental id:', rental.id || rental._id)
+        console.log('Product id:', productId)
+        console.log('Rental products: ', products);
         console.log('Matching Product:', products[productId])
         // TODO: Non è detto che il rental abbia quel prodotto?
         if (rental.products[productId]?.instances[instanceId]) {
             removedDateRanges.push(...rental.products[productId].instances[instanceId].dateRanges);
         }
     }
+    
     // console.log('===========')
 
     console.log('Removed date ranges: ', removedDateRanges);
+
     // console.log('Availability: ', instance.availability);
 
     const newRanges =  getNewRanges(instance.availability, removedDateRanges);
@@ -288,9 +290,11 @@ const computeRentabilities = async (productId, instances, ignoreAllRentals, igno
   
     for (const [instanceId, instance] of Object.entries(instances)) {
         // console.log('Instance:', instance);
-        rentabilities[instanceId] = computeRentability(productId, instanceId, instance, rentals);
+        if (!['broken', 'obliterated'].includes(instance.currentStatus)) {
+            rentabilities[instanceId] = computeRentability(productId, instanceId, instance, rentals);
+        }
     }
-  
+
     return rentabilities;
 }
 
