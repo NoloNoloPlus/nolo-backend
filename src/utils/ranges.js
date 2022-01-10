@@ -211,7 +211,6 @@ const getNewRanges = (oldRanges, removedRanges) => {
         } else if (newSubRanges.length == 1) {
             console.log('New sub ranges: ', newSubRanges);
 
-            const newRanges = [];
             for (const subRange of newSubRanges[0]) {
                 newRanges.push(
                     {
