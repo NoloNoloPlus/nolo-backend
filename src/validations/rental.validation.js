@@ -19,10 +19,10 @@ const addRental = {
                 discounts: discounts(true).default([])
             })
             ).required(),
-        status: Joi.string().valid('ready', 'active', 'closed').default('ready'),
+        status: Joi.string().valid('ready', 'active', 'closed'),
         userId: Joi.string(),
         approvedBy: Joi.string(),
-        discounts: discounts(true).default([]),
+        discounts: discounts(true),
         penalty: Joi.number()
     })
 }
