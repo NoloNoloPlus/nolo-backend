@@ -96,6 +96,7 @@ const preprocessRental = async (req, rental, ignoreRental) => {
 
     rental.userId = req.body.userId || req.user.id;
     rental.approvedBy = req.body.approvedBy || null;
+    rental.status = req.body.status || 'ready';
 
     return rental;
 }
@@ -174,6 +175,22 @@ const deleteRental = catchAsync(async (req, res) => {
 
     const filter = {
         _id: rentalId
+    }
+
+    const currentRental = await rentalService.queryRental(filter);
+
+    if (!currentRental) {
+        throw new ApiError(httpStatus.NOT_FOUND, 'Rental id not found');
+    }
+
+    if (!verifyRights(req.user, ['manageRentals'])) {
+        if (currentRental.userId != req.user.id) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, 'Cannot delete rental of other users without "manageRentals" capability.');
+        }
+
+        if (['active', 'closed'].includes(currentRental.status)) {
+            throw new ApiError(httpStatus.UNAUTHORIZED, `Cannot delete a rental with status ${currentRental.status} without "manageRentals" capability.`);
+        }
     }
 
     const result = await rentalService.deleteRental(filter);
