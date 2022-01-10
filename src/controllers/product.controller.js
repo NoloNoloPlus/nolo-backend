@@ -105,11 +105,7 @@ const getRentability = catchAsync(async (req, res) => {
   const filter = {
     _id: req.params.classId,
   };
-  const projection = {
-    _id: 0,
-    instances: 1,
-  };
-  const result = mapToObjectRec(await productService.queryProduct(filter, projection));
+  const result = mapToObjectRec(await productService.queryProduct(filter));
 
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, 'Class id not found');
@@ -451,6 +447,13 @@ const getQuote = catchAsync(async (req, res) => {
   }
 
   const rentabilities = await computeRentabilities(req.params.classId, instances, req.query.ignoreAllRentals, req.query.ignoreRental);
+
+  // Don't return a non-rentable instance
+  for (const instanceId of Object.keys(instances)) {
+    if (!rentabilities[instanceId]) {
+      delete instances[instanceId];
+    }
+  }
 
   for (const [instanceId, rentability] of Object.entries(rentabilities)) {
     instances[instanceId].availability = rentability;
